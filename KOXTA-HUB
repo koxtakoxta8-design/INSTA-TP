@@ -15,6 +15,7 @@ local LOGO = "rbxassetid://103645600156879"
 
 local PanelOpen = true
 local Enabled = true
+local StartSequence
 
 --==================================================
 -- LIMPIAR INTERFAZ ANTERIOR
@@ -31,7 +32,7 @@ end
 --==================================================
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "KOXTA_INSTA_TP"
+Gui.Name = "KOXTA_INSTA_GRAB_BLACK"
 Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -399,7 +400,7 @@ Title.Position = UDim2.new(
 )
 
 Title.BackgroundTransparency = 1
-Title.Text = "KOXTA INSTA TP"
+Title.Text = "KOXTA INSTA GRAB"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 17
 
@@ -555,7 +556,7 @@ InstaButton.BackgroundColor3 =
     )
 
 InstaButton.BorderSizePixel = 0
-InstaButton.Text = "INSTA TP   •   ON"
+InstaButton.Text = "INSTA GRAB   •   ON"
 InstaButton.Font = Enum.Font.GothamBold
 InstaButton.TextSize = 12
 
@@ -591,6 +592,12 @@ InstaStroke.Color =
 InstaStroke.Transparency = 0.25
 InstaStroke.Parent = InstaButton
 
+
+--==================================================
+-- CONEXION REAL AL MECANISMO
+--==================================================
+
+InstaButton = InstaButton
 --==================================================
 -- BOTÓN VISUAL
 --==================================================
@@ -602,7 +609,7 @@ InstaButton.MouseButton1Click:Connect(function()
     if Enabled then
 
         InstaButton.Text =
-            "INSTA TP   •   ON"
+            "INSTA GRAB   •   ON"
 
         InstaButton.TextColor3 =
             Color3.fromRGB(
@@ -624,7 +631,7 @@ InstaButton.MouseButton1Click:Connect(function()
     else
 
         InstaButton.Text =
-            "INSTA TP   •   OFF"
+            "INSTA GRAB   •   OFF"
 
         InstaButton.TextColor3 =
             Color3.fromRGB(
@@ -1043,3 +1050,639 @@ task.spawn(function()
     end
 
 end)
+
+--==================================================
+-- SECUENCIA DE PRUEBA
+-- PROMPT
+-- -> 20 CICLOS
+-- -> RESPAWN ESTABLE
+-- -> DESLIZAMIENTO FOTO 2 (1000)
+-- -> 65% -> TP FOTO 2
+-- -> AUTO GRAB: HUEVO / ROBAR
+-- -> ESPERA SOLO LO NECESARIO PARA CONFIRMAR
+-- -> 0.5 SEGUNDOS
+-- -> TP FOTO 3
+--==================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+local Busy = false
+local Connections = {}
+
+--==================================================
+-- PUNTOS
+--==================================================
+
+local RespawnPoint = Vector3.new(532.64, 70.28, -366.98)
+local Photo2 = Vector3.new(563.66, 70.28, -369.69)
+local Photo3 = Vector3.new(544.41, 70.28, -365.58)
+
+local Caminadoras = {
+    Vector3.new(528.79, 70.28, -445.45),
+    Vector3.new(500.32, 71.62, -445.89),
+    Vector3.new(503.88, 70.28, -374.50),
+    Vector3.new(501.67, 71.62, -324.69),
+    Vector3.new(500.17, 71.62, -282.29)
+}
+
+--==================================================
+-- CAMINADORA MAS CERCANA
+--==================================================
+
+local NearestPoint
+local NearestDistance = math.huge
+
+for _, Position in ipairs(Caminadoras) do
+    local Distance = (RespawnPoint - Position).Magnitude
+
+    if Distance < NearestDistance then
+        NearestDistance = Distance
+        NearestPoint = Position
+    end
+end
+
+--==================================================
+-- TP
+--==================================================
+
+local function TP(Character, Position)
+    if not Character or not Character.Parent then
+        return false
+    end
+
+    Character:PivotTo(CFrame.new(Position))
+    return true
+end
+
+--==================================================
+-- DESLIZAMIENTO A FOTO 2
+-- VELOCIDAD 1000
+-- AL 65% -> TP DIRECTO A FOTO 2
+--==================================================
+
+local function MoveToPhoto2(Character)
+    if not Character or not Character.Parent then
+        return false
+    end
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Root then
+        return false
+    end
+
+    local Speed = 1000
+    local ArrivalDistance = 0.5
+
+    local StartPosition = Root.Position
+    local TotalDistance = (Photo2 - StartPosition).Magnitude
+
+    if TotalDistance <= ArrivalDistance then
+        Character:PivotTo(CFrame.new(Photo2))
+        return true
+    end
+
+    print("DESLIZAMIENTO A FOTO 2")
+
+    while Root and Root.Parent and Character.Parent do
+        local CurrentPosition = Root.Position
+        local Distance = (Photo2 - CurrentPosition).Magnitude
+
+        if Distance <= ArrivalDistance then
+            Character:PivotTo(CFrame.new(Photo2))
+            print("FOTO 2 CONFIRMADA")
+            return true
+        end
+
+        local DistanceTravelled = TotalDistance - Distance
+        local Progress = DistanceTravelled / TotalDistance
+
+        if Progress >= 0.65 then
+            print("65% ALCANZADO -> TP FOTO 2")
+
+            Character:PivotTo(CFrame.new(Photo2))
+
+            if (Root.Position - Photo2).Magnitude <= ArrivalDistance then
+                print("FOTO 2 CONFIRMADA")
+                return true
+            end
+        end
+
+        local Direction = (Photo2 - CurrentPosition).Unit
+        local Delta = RunService.Heartbeat:Wait()
+        local Step = math.min(Speed * Delta, Distance)
+
+        Root.CFrame = CFrame.new(CurrentPosition + Direction * Step)
+    end
+
+    return false
+end
+
+--==================================================
+-- DETECTAR PROMPT DE HUEVO / ROBAR
+--==================================================
+
+local function IsEggPrompt(Prompt)
+    if not Prompt
+        or not Prompt:IsA("ProximityPrompt")
+        or not Prompt.Enabled then
+        return false
+    end
+
+    local Text = string.lower(
+        tostring(Prompt.ActionText)
+        .. " "
+        .. tostring(Prompt.ObjectText)
+        .. " "
+        .. tostring(Prompt.Name)
+    )
+
+    local Keywords = {
+        "huevo",
+        "egg",
+        "robar",
+        "rob",
+        "grab",
+        "pick",
+        "collect",
+        "recoger",
+        "agarrar",
+        "take",
+        "tomar"
+    }
+
+    for _, Word in ipairs(Keywords) do
+        if string.find(Text, Word, 1, true) then
+            return true
+        end
+    end
+
+    return false
+end
+
+--==================================================
+-- POSICION DEL PROMPT
+--==================================================
+
+local function GetPromptPosition(Prompt)
+    local Parent = Prompt.Parent
+
+    if not Parent then
+        return nil
+    end
+
+    if Parent:IsA("BasePart") then
+        return Parent.Position
+    end
+
+    if Parent:IsA("Attachment") then
+        return Parent.WorldPosition
+    end
+
+    local Part = Parent:FindFirstChildWhichIsA("BasePart", true)
+
+    if Part then
+        return Part.Position
+    end
+
+    return nil
+end
+
+--==================================================
+-- BUSCAR HUEVO / ROBAR
+--==================================================
+
+local function FindEggPrompt(Root)
+    local BestPrompt
+    local BestDistance = math.huge
+
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if IsEggPrompt(Object) then
+            local Position = GetPromptPosition(Object)
+
+            if Position then
+                local Distance = (Root.Position - Position).Magnitude
+
+                if Distance < BestDistance then
+                    BestDistance = Distance
+                    BestPrompt = Object
+                end
+            end
+        end
+    end
+
+    return BestPrompt
+end
+
+--==================================================
+-- AUTO GRAB
+-- BUSCA EL PROMPT Y LO ACTIVA
+--==================================================
+
+local function AutoGrab()
+    local Character = Player.Character
+
+    if not Character or not Character.Parent then
+        return false
+    end
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Root then
+        return false
+    end
+
+    print("AUTO GRAB ULTRA RAPIDO...")
+
+    -- Buscar el prompt inmediatamente.
+    local SearchStart = os.clock()
+    local BestPrompt
+
+    while os.clock() - SearchStart < 2 do
+        if not Character.Parent then
+            return false
+        end
+
+        Root = Character:FindFirstChild("HumanoidRootPart")
+        if not Root then
+            return false
+        end
+
+        BestPrompt = FindEggPrompt(Root)
+
+        if BestPrompt then
+            break
+        end
+
+        RunService.Heartbeat:Wait()
+    end
+
+    if not BestPrompt then
+        print("NO SE ENCONTRO HUEVO / ROBAR")
+        return false
+    end
+
+    print("PROMPT ENCONTRADO: " .. BestPrompt:GetFullName())
+
+    pcall(function()
+        BestPrompt.HoldDuration = 0
+        BestPrompt.RequiresLineOfSight = false
+    end)
+
+    -- Activacion en ráfaga: lo mas rapido que permite el frame/servidor.
+    local BurstTime = 0.75
+    local BurstStart = os.clock()
+    local Activated = false
+
+    while os.clock() - BurstStart < BurstTime do
+        if not Character.Parent then
+            return false
+        end
+
+        Root = Character:FindFirstChild("HumanoidRootPart")
+        if not Root then
+            return false
+        end
+
+        if not BestPrompt
+            or not BestPrompt.Parent
+            or not BestPrompt:IsA("ProximityPrompt") then
+            return true
+        end
+
+        if not BestPrompt.Enabled then
+            return true
+        end
+
+        -- Varias activaciones por frame, sin esperas artificiales.
+        if typeof(fireproximityprompt) == "function" then
+            for _ = 1, 50 do
+                pcall(function()
+                    fireproximityprompt(BestPrompt, 1, true)
+                end)
+                Activated = true
+            end
+        end
+
+        pcall(function()
+            BestPrompt:InputHoldBegin()
+        end)
+
+        pcall(function()
+            BestPrompt:InputHoldEnd()
+        end)
+
+        Activated = true
+
+        -- Si el juego reemplaza el prompt, tomar el nuevo inmediatamente.
+        local NewPrompt = FindEggPrompt(Root)
+        if NewPrompt and NewPrompt ~= BestPrompt then
+            BestPrompt = NewPrompt
+
+            pcall(function()
+                BestPrompt.HoldDuration = 0
+                BestPrompt.RequiresLineOfSight = false
+            end)
+        end
+
+        RunService.Heartbeat:Wait()
+    end
+
+    -- Ultima ráfaga instantanea antes de salir.
+    if BestPrompt and BestPrompt.Parent and BestPrompt.Enabled then
+        if typeof(fireproximityprompt) == "function" then
+            for _ = 1, 100 do
+                pcall(function()
+                    fireproximityprompt(BestPrompt, 1, true)
+                end)
+            end
+        end
+
+        pcall(function()
+            BestPrompt:InputHoldBegin()
+            BestPrompt:InputHoldEnd()
+        end)
+
+        Activated = true
+    end
+
+    print("AUTO GRAB ULTRA TERMINADO")
+    return Activated
+end
+
+--==================================================
+-- RESPAWN ESTABLE
+--==================================================
+
+local function WaitForStableRespawn(OldCharacter)
+    print("ESPERANDO RESPAWN...")
+
+    local Character
+
+    repeat
+        task.wait()
+        Character = Player.Character
+    until Character
+        and Character ~= OldCharacter
+        and Character.Parent
+
+    print("NUEVO PERSONAJE DETECTADO")
+
+    local Humanoid = Character:WaitForChild("Humanoid")
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    while Humanoid.Health <= 0 do
+        task.wait()
+    end
+
+    print("ESPERANDO POSICION ESTABLE...")
+
+    local LastPosition = Root.Position
+    local StableTime = 0
+
+    while StableTime < 0.4 do
+        task.wait(0.05)
+
+        if not Character.Parent then
+            return WaitForStableRespawn(OldCharacter)
+        end
+
+        if not Root.Parent then
+            Root = Character:WaitForChild("HumanoidRootPart")
+            LastPosition = Root.Position
+            StableTime = 0
+            continue
+        end
+
+        local CurrentPosition = Root.Position
+        local Movement = (CurrentPosition - LastPosition).Magnitude
+
+        if Movement < 0.05 then
+            StableTime += 0.05
+        else
+            StableTime = 0
+        end
+
+        LastPosition = CurrentPosition
+    end
+
+    print("RESPAWN ESTABLE -> CONTINUANDO")
+
+    return Character
+end
+
+--==================================================
+-- SECUENCIA
+--==================================================
+
+local function StartSequence()
+    if Busy then
+        return
+    end
+
+    Busy = true
+
+    local Character = Player.Character
+
+    if not Character then
+        Busy = false
+        return
+    end
+
+    print("INICIANDO SECUENCIA")
+
+    for Cycle = 1, 20 do
+        if not Character or not Character.Parent then
+            Busy = false
+            return
+        end
+
+        TP(Character, RespawnPoint)
+        RunService.Heartbeat:Wait()
+
+        if NearestPoint then
+            TP(Character, NearestPoint)
+        end
+
+        RunService.Heartbeat:Wait()
+
+        print("CICLO " .. Cycle .. "/20")
+    end
+
+    print("20 CICLOS TERMINADOS")
+
+    --================================================
+    -- FORZAR LA MUERTE PARA ACTIVAR EL RESPAWN
+    -- Esta parte es necesaria para que la secuencia
+    -- continúe con el personaje nuevo.
+    --================================================
+
+    print("MATANDO PERSONAJE -> RESPAWN")
+
+    local OldCharacter = Character
+    local Humanoid = OldCharacter:FindFirstChildOfClass("Humanoid")
+
+    if not Humanoid then
+        Busy = false
+        return
+    end
+
+    Humanoid.Health = 0
+
+    Character = WaitForStableRespawn(OldCharacter)
+
+    if not Character then
+        Busy = false
+        return
+    end
+
+    print("DESPLAZAMIENTO A FOTO 2")
+
+    local ReachedPhoto2 = MoveToPhoto2(Character)
+
+    if not ReachedPhoto2 then
+        print("NO SE PUDO CONFIRMAR FOTO 2")
+        Busy = false
+        return
+    end
+
+    print("FOTO 2 CONFIRMADA")
+
+    task.wait(0.05)
+
+    Character = Player.Character
+    if not Character or not Character.Parent then
+        Busy = false
+        return
+    end
+
+    print("TP FOTO 3")
+    local WentToPhoto3 = TP(Character, Photo3)
+
+    if not WentToPhoto3 then
+        print("NO SE PUDO IR A FOTO 3")
+        Busy = false
+        return
+    end
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+    if not Root then
+        Busy = false
+        return
+    end
+
+    local Photo3Start = os.clock()
+    while (Root.Position - Photo3).Magnitude > 1.5
+        and os.clock() - Photo3Start < 1 do
+
+        Character:PivotTo(CFrame.new(Photo3))
+        RunService.Heartbeat:Wait()
+
+        Root = Character:FindFirstChild("HumanoidRootPart")
+        if not Root then
+            Busy = false
+            return
+        end
+    end
+
+    print("FOTO 3 CONFIRMADA")
+
+    local Grabbed = AutoGrab()
+
+    if not Grabbed then
+        print("AUTO GRAB NO CONFIRMADO")
+        Busy = false
+        return
+    end
+
+    print("HUEVO AGARRADO")
+
+    -- Un poco mas de tiempo para que el juego termine
+    -- de registrar completamente el huevo antes del TP.
+    task.wait(2)
+
+    Character = Player.Character
+    if not Character or not Character.Parent then
+        Busy = false
+        return
+    end
+
+    print("TP FOTO 2 FINAL")
+    TP(Character, Photo2)
+
+    print("SECUENCIA TERMINADA")
+
+    Busy = false
+end
+
+--==================================================
+-- CONECTAR PROMPT
+--==================================================
+
+local function ConnectPrompt(Prompt)
+    if not Prompt:IsA("ProximityPrompt") then
+        return
+    end
+
+    if Connections[Prompt] then
+        return
+    end
+
+    Connections[Prompt] = Prompt.Triggered:Connect(function()
+        if Busy then
+            return
+        end
+
+        print("PROMPT COMPLETADO")
+
+        task.spawn(StartSequence)
+    end)
+end
+
+for _, Object in ipairs(workspace:GetDescendants()) do
+    if Object:IsA("ProximityPrompt") then
+        ConnectPrompt(Object)
+    end
+end
+
+workspace.DescendantAdded:Connect(function(Object)
+    if Object:IsA("ProximityPrompt") then
+        task.wait()
+        ConnectPrompt(Object)
+    end
+end)
+
+print("SISTEMA 65% + AUTO GRAB HUEVO/ROBAR CARGADO")
+print("ESPERANDO PROMPT...")
+--==================================================
+-- KOXTA BLACK EDITION -> MECANISMO
+--==================================================
+local KOXTA_GUI_BUTTON = Gui:FindFirstChild("MainPanel") and Gui.MainPanel:FindFirstChild("InstaTP")
+
+local function SetKOXTAStatus(on)
+    if KOXTA_GUI_BUTTON then
+        local stroke = KOXTA_GUI_BUTTON:FindFirstChildOfClass("UIStroke")
+        if on then
+            KOXTA_GUI_BUTTON.Text = "INSTA GRAB   •   ON"
+            if stroke then stroke.Color = Color3.fromRGB(0,220,90) end
+        else
+            KOXTA_GUI_BUTTON.Text = "INSTA GRAB   •   OFF"
+            if stroke then stroke.Color = Color3.fromRGB(230,70,70) end
+        end
+    end
+end
+
+local RealEnabled = true
+if KOXTA_GUI_BUTTON then
+    KOXTA_GUI_BUTTON.MouseButton1Click:Connect(function()
+        RealEnabled = not RealEnabled
+        SetKOXTAStatus(RealEnabled)
+        if RealEnabled then
+            if not Busy then
+                task.spawn(StartSequence)
+            end
+        end
+    end)
+end
