@@ -1,3 +1,4 @@
+```lua
 --==================================================
 -- SECUENCIA DE PRUEBA
 -- PROMPT
@@ -602,4 +603,5 @@ workspace.DescendantAdded:Connect(function(Object)
 end)
 
 print("SISTEMA 65% + AUTO GRAB HUEVO/ROBAR CARGADO")
-print("ESPERANDO PROMPT...")
+print("ESPERANDO PROMPT...") 
+```
