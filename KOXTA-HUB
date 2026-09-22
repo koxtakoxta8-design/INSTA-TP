@@ -546,9 +546,13 @@ local function StartSequence()
 
     print("HUEVO AGARRADO")
 
-    -- Un poco mas de tiempo para que el juego termine
-    -- de registrar completamente el huevo antes del TP.
-    task.wait(2)
+    -- Pausa breve para que el servidor termine de registrar
+    -- el huevo antes de continuar con el siguiente TP.
+    task.wait(0.8)
+
+    -- Confirmar que el personaje sigue estable antes de continuar.
+    RunService.Heartbeat:Wait()
+    task.wait(0.2)
 
     Character = Player.Character
     if not Character or not Character.Parent then
