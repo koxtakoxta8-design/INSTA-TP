@@ -279,7 +279,7 @@ local function AutoGrab()
     end)
 
     -- Activacion en ráfaga: lo mas rapido que permite el frame/servidor.
-    local BurstTime = 0.75
+    local BurstTime = 0.10
     local BurstStart = os.clock()
     local Activated = false
 
@@ -305,7 +305,7 @@ local function AutoGrab()
 
         -- Varias activaciones por frame, sin esperas artificiales.
         if typeof(fireproximityprompt) == "function" then
-            for _ = 1, 3 do
+            for _ = 1, 15 do
                 pcall(function()
                     fireproximityprompt(BestPrompt, 1, true)
                 end)
@@ -340,7 +340,7 @@ local function AutoGrab()
     -- Ultima ráfaga instantanea antes de salir.
     if BestPrompt and BestPrompt.Parent and BestPrompt.Enabled then
         if typeof(fireproximityprompt) == "function" then
-            for _ = 1, 5 do
+            for _ = 1, 20 do
                 pcall(function()
                     fireproximityprompt(BestPrompt, 1, true)
                 end)
@@ -548,7 +548,7 @@ local function StartSequence()
 
     -- Un poco mas de tiempo para que el juego termine
     -- de registrar completamente el huevo antes del TP.
-    task.wait(2)
+    task.wait(0.15)
 
     Character = Player.Character
     if not Character or not Character.Parent then
