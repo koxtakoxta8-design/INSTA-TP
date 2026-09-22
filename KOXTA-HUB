@@ -13,17 +13,10 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local Busy = false
 local Connections = {}
-
---==================================================
--- CONTROL INSTA TP
---==================================================
-
-local InstaTP_Enabled = true
 
 --==================================================
 -- PUNTOS
@@ -62,10 +55,6 @@ end
 --==================================================
 
 local function TP(Character, Position)
-    if not InstaTP_Enabled then
-        return false
-    end
-
     if not Character or not Character.Parent then
         return false
     end
@@ -81,11 +70,6 @@ end
 --==================================================
 
 local function MoveToPhoto2(Character)
-
-    if not InstaTP_Enabled then
-        return false
-    end
-
     if not Character or not Character.Parent then
         return false
     end
@@ -103,10 +87,6 @@ local function MoveToPhoto2(Character)
     local TotalDistance = (Photo2 - StartPosition).Magnitude
 
     if TotalDistance <= ArrivalDistance then
-        if not InstaTP_Enabled then
-            return false
-        end
-
         Character:PivotTo(CFrame.new(Photo2))
         return true
     end
@@ -114,21 +94,10 @@ local function MoveToPhoto2(Character)
     print("DESLIZAMIENTO A FOTO 2")
 
     while Root and Root.Parent and Character.Parent do
-
-        if not InstaTP_Enabled then
-            print("INSTA TP OFF -> DETENIENDO")
-            return false
-        end
-
         local CurrentPosition = Root.Position
         local Distance = (Photo2 - CurrentPosition).Magnitude
 
         if Distance <= ArrivalDistance then
-
-            if not InstaTP_Enabled then
-                return false
-            end
-
             Character:PivotTo(CFrame.new(Photo2))
             print("FOTO 2 CONFIRMADA")
             return true
@@ -138,11 +107,6 @@ local function MoveToPhoto2(Character)
         local Progress = DistanceTravelled / TotalDistance
 
         if Progress >= 0.65 then
-
-            if not InstaTP_Enabled then
-                return false
-            end
-
             print("65% ALCANZADO -> TP FOTO 2")
 
             Character:PivotTo(CFrame.new(Photo2))
@@ -156,10 +120,6 @@ local function MoveToPhoto2(Character)
         local Direction = (Photo2 - CurrentPosition).Unit
         local Delta = RunService.Heartbeat:Wait()
         local Step = math.min(Speed * Delta, Distance)
-
-        if not InstaTP_Enabled then
-            return false
-        end
 
         Root.CFrame = CFrame.new(CurrentPosition + Direction * Step)
     end
@@ -246,21 +206,16 @@ local function FindEggPrompt(Root)
     local BestDistance = math.huge
 
     for _, Object in ipairs(workspace:GetDescendants()) do
-
         if IsEggPrompt(Object) then
-
             local Position = GetPromptPosition(Object)
 
             if Position then
-
-                local Distance =
-                    (Root.Position - Position).Magnitude
+                local Distance = (Root.Position - Position).Magnitude
 
                 if Distance < BestDistance then
                     BestDistance = Distance
                     BestPrompt = Object
                 end
-
             end
         end
     end
@@ -270,22 +225,17 @@ end
 
 --==================================================
 -- AUTO GRAB
+-- BUSCA EL PROMPT Y LO ACTIVA
 --==================================================
 
 local function AutoGrab()
-
-    if not InstaTP_Enabled then
-        return false
-    end
-
     local Character = Player.Character
 
     if not Character or not Character.Parent then
         return false
     end
 
-    local Root =
-        Character:FindFirstChild("HumanoidRootPart")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
 
     if not Root then
         return false
@@ -293,22 +243,16 @@ local function AutoGrab()
 
     print("AUTO GRAB ULTRA RAPIDO...")
 
+    -- Buscar el prompt inmediatamente.
     local SearchStart = os.clock()
     local BestPrompt
 
     while os.clock() - SearchStart < 2 do
-
-        if not InstaTP_Enabled then
-            return false
-        end
-
         if not Character.Parent then
             return false
         end
 
-        Root =
-            Character:FindFirstChild("HumanoidRootPart")
-
+        Root = Character:FindFirstChild("HumanoidRootPart")
         if not Root then
             return false
         end
@@ -327,33 +271,24 @@ local function AutoGrab()
         return false
     end
 
-    print(
-        "PROMPT ENCONTRADO: "
-        .. BestPrompt:GetFullName()
-    )
+    print("PROMPT ENCONTRADO: " .. BestPrompt:GetFullName())
 
     pcall(function()
         BestPrompt.HoldDuration = 0
         BestPrompt.RequiresLineOfSight = false
     end)
 
+    -- Activacion en ráfaga: lo mas rapido que permite el frame/servidor.
     local BurstTime = 0.75
     local BurstStart = os.clock()
     local Activated = false
 
     while os.clock() - BurstStart < BurstTime do
-
-        if not InstaTP_Enabled then
-            return false
-        end
-
         if not Character.Parent then
             return false
         end
 
-        Root =
-            Character:FindFirstChild("HumanoidRootPart")
-
+        Root = Character:FindFirstChild("HumanoidRootPart")
         if not Root then
             return false
         end
@@ -368,22 +303,12 @@ local function AutoGrab()
             return true
         end
 
+        -- Varias activaciones por frame, sin esperas artificiales.
         if typeof(fireproximityprompt) == "function" then
-
             for _ = 1, 3 do
-
-                if not InstaTP_Enabled then
-                    return false
-                end
-
                 pcall(function()
-                    fireproximityprompt(
-                        BestPrompt,
-                        1,
-                        true
-                    )
+                    fireproximityprompt(BestPrompt, 1, true)
                 end)
-
                 Activated = true
             end
         end
@@ -398,10 +323,9 @@ local function AutoGrab()
 
         Activated = true
 
+        -- Si el juego reemplaza el prompt, tomar el nuevo inmediatamente.
         local NewPrompt = FindEggPrompt(Root)
-
         if NewPrompt and NewPrompt ~= BestPrompt then
-
             BestPrompt = NewPrompt
 
             pcall(function()
@@ -413,28 +337,12 @@ local function AutoGrab()
         RunService.Heartbeat:Wait()
     end
 
-    if not InstaTP_Enabled then
-        return false
-    end
-
-    if BestPrompt
-        and BestPrompt.Parent
-        and BestPrompt.Enabled then
-
+    -- Ultima ráfaga instantanea antes de salir.
+    if BestPrompt and BestPrompt.Parent and BestPrompt.Enabled then
         if typeof(fireproximityprompt) == "function" then
-
             for _ = 1, 5 do
-
-                if not InstaTP_Enabled then
-                    return false
-                end
-
                 pcall(function()
-                    fireproximityprompt(
-                        BestPrompt,
-                        1,
-                        true
-                    )
+                    fireproximityprompt(BestPrompt, 1, true)
                 end)
             end
         end
@@ -448,7 +356,6 @@ local function AutoGrab()
     end
 
     print("AUTO GRAB ULTRA TERMINADO")
-
     return Activated
 end
 
@@ -457,43 +364,23 @@ end
 --==================================================
 
 local function WaitForStableRespawn(OldCharacter)
-
     print("ESPERANDO RESPAWN...")
-
-    if not InstaTP_Enabled then
-        return nil
-    end
 
     local Character
 
     repeat
-
         task.wait()
-
-        if not InstaTP_Enabled then
-            return nil
-        end
-
         Character = Player.Character
-
     until Character
         and Character ~= OldCharacter
         and Character.Parent
 
     print("NUEVO PERSONAJE DETECTADO")
 
-    local Humanoid =
-        Character:WaitForChild("Humanoid")
-
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
+    local Humanoid = Character:WaitForChild("Humanoid")
+    local Root = Character:WaitForChild("HumanoidRootPart")
 
     while Humanoid.Health <= 0 do
-
-        if not InstaTP_Enabled then
-            return nil
-        end
-
         task.wait()
     end
 
@@ -503,11 +390,6 @@ local function WaitForStableRespawn(OldCharacter)
     local StableTime = 0
 
     while StableTime < 0.4 do
-
-        if not InstaTP_Enabled then
-            return nil
-        end
-
         task.wait(0.05)
 
         if not Character.Parent then
@@ -515,18 +397,14 @@ local function WaitForStableRespawn(OldCharacter)
         end
 
         if not Root.Parent then
-            Root =
-                Character:WaitForChild("HumanoidRootPart")
-
+            Root = Character:WaitForChild("HumanoidRootPart")
             LastPosition = Root.Position
             StableTime = 0
-
             continue
         end
 
         local CurrentPosition = Root.Position
-        local Movement =
-            (CurrentPosition - LastPosition).Magnitude
+        local Movement = (CurrentPosition - LastPosition).Magnitude
 
         if Movement < 0.05 then
             StableTime += 0.05
@@ -547,11 +425,6 @@ end
 --==================================================
 
 local function StartSequence()
-
-    if not InstaTP_Enabled then
-        return
-    end
-
     if Busy then
         return
     end
@@ -568,26 +441,13 @@ local function StartSequence()
     print("INICIANDO SECUENCIA")
 
     for Cycle = 1, 20 do
-
-        if not InstaTP_Enabled then
-            print("INSTA TP OFF")
-            Busy = false
-            return
-        end
-
         if not Character or not Character.Parent then
             Busy = false
             return
         end
 
         TP(Character, RespawnPoint)
-
         RunService.Heartbeat:Wait()
-
-        if not InstaTP_Enabled then
-            Busy = false
-            return
-        end
 
         if NearestPoint then
             TP(Character, NearestPoint)
@@ -600,51 +460,34 @@ local function StartSequence()
 
     print("20 CICLOS TERMINADOS")
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
     --================================================
     -- FORZAR LA MUERTE PARA ACTIVAR EL RESPAWN
+    -- Esta parte es necesaria para que la secuencia
+    -- continúe con el personaje nuevo.
     --================================================
 
     print("MATANDO PERSONAJE -> RESPAWN")
 
     local OldCharacter = Character
-
-    local Humanoid =
-        OldCharacter:FindFirstChildOfClass("Humanoid")
+    local Humanoid = OldCharacter:FindFirstChildOfClass("Humanoid")
 
     if not Humanoid then
         Busy = false
         return
     end
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
     Humanoid.Health = 0
 
-    Character =
-        WaitForStableRespawn(OldCharacter)
+    Character = WaitForStableRespawn(OldCharacter)
 
     if not Character then
         Busy = false
         return
     end
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
     print("DESPLAZAMIENTO A FOTO 2")
 
-    local ReachedPhoto2 =
-        MoveToPhoto2(Character)
+    local ReachedPhoto2 = MoveToPhoto2(Character)
 
     if not ReachedPhoto2 then
         print("NO SE PUDO CONFIRMAR FOTO 2")
@@ -654,24 +497,16 @@ local function StartSequence()
 
     print("FOTO 2 CONFIRMADA")
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
     task.wait(0.05)
 
     Character = Player.Character
-
     if not Character or not Character.Parent then
         Busy = false
         return
     end
 
     print("TP FOTO 3")
-
-    local WentToPhoto3 =
-        TP(Character, Photo3)
+    local WentToPhoto3 = TP(Character, Photo3)
 
     if not WentToPhoto3 then
         print("NO SE PUDO IR A FOTO 3")
@@ -679,31 +514,20 @@ local function StartSequence()
         return
     end
 
-    local Root =
-        Character:FindFirstChild("HumanoidRootPart")
-
+    local Root = Character:FindFirstChild("HumanoidRootPart")
     if not Root then
         Busy = false
         return
     end
 
     local Photo3Start = os.clock()
-
     while (Root.Position - Photo3).Magnitude > 1.5
         and os.clock() - Photo3Start < 1 do
 
-        if not InstaTP_Enabled then
-            Busy = false
-            return
-        end
-
         Character:PivotTo(CFrame.new(Photo3))
-
         RunService.Heartbeat:Wait()
 
-        Root =
-            Character:FindFirstChild("HumanoidRootPart")
-
+        Root = Character:FindFirstChild("HumanoidRootPart")
         if not Root then
             Busy = false
             return
@@ -711,11 +535,6 @@ local function StartSequence()
     end
 
     print("FOTO 3 CONFIRMADA")
-
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
 
     local Grabbed = AutoGrab()
 
@@ -727,27 +546,17 @@ local function StartSequence()
 
     print("HUEVO AGARRADO")
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
+    -- Un poco mas de tiempo para que el juego termine
+    -- de registrar completamente el huevo antes del TP.
     task.wait(2)
 
-    if not InstaTP_Enabled then
-        Busy = false
-        return
-    end
-
     Character = Player.Character
-
     if not Character or not Character.Parent then
         Busy = false
         return
     end
 
     print("TP FOTO 2 FINAL")
-
     TP(Character, Photo2)
 
     print("SECUENCIA TERMINADA")
@@ -760,7 +569,6 @@ end
 --==================================================
 
 local function ConnectPrompt(Prompt)
-
     if not Prompt:IsA("ProximityPrompt") then
         return
     end
@@ -769,196 +577,29 @@ local function ConnectPrompt(Prompt)
         return
     end
 
-    Connections[Prompt] =
-        Prompt.Triggered:Connect(function()
+    Connections[Prompt] = Prompt.Triggered:Connect(function()
+        if Busy then
+            return
+        end
 
-            if not InstaTP_Enabled then
-                return
-            end
+        print("PROMPT COMPLETADO")
 
-            if Busy then
-                return
-            end
-
-            print("PROMPT COMPLETADO")
-
-            task.spawn(StartSequence)
-        end)
+        task.spawn(StartSequence)
+    end)
 end
 
 for _, Object in ipairs(workspace:GetDescendants()) do
-
     if Object:IsA("ProximityPrompt") then
         ConnectPrompt(Object)
     end
 end
 
 workspace.DescendantAdded:Connect(function(Object)
-
     if Object:IsA("ProximityPrompt") then
-
         task.wait()
-
         ConnectPrompt(Object)
     end
 end)
 
 print("SISTEMA 65% + AUTO GRAB HUEVO/ROBAR CARGADO")
 print("ESPERANDO PROMPT...")
-
---==================================================
---                 INTERFAZ ON / OFF
---==================================================
-
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "KOXTA_INSTA_TP_CONTROL"
-Gui.ResetOnSpawn = false
-Gui.IgnoreGuiInset = true
-Gui.DisplayOrder = 999999
-
-pcall(function()
-    Gui.Parent = game:GetService("CoreGui")
-end)
-
-if not Gui.Parent then
-    Gui.Parent = Player:WaitForChild("PlayerGui")
-end
-
---==================================================
--- BOTON
---==================================================
-
-local Button = Instance.new("TextButton")
-
-Button.Name = "ON_OFF"
-Button.Size = UDim2.new(0,125,0,48)
-Button.Position = UDim2.new(1,-140,0,15)
-
-Button.BackgroundColor3 =
-    Color3.fromRGB(5,5,5)
-
-Button.BorderSizePixel = 0
-
-Button.Text = "ON"
-Button.TextColor3 =
-    Color3.fromRGB(255,255,255)
-
-Button.TextSize = 17
-Button.Font = Enum.Font.GothamBold
-
-Button.AutoButtonColor = false
-Button.Parent = Gui
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0,14)
-Corner.Parent = Button
-
-local Stroke = Instance.new("UIStroke")
-Stroke.Thickness = 2
-Stroke.Color = Color3.fromRGB(255,255,255)
-Stroke.Transparency = 0.1
-Stroke.Parent = Button
-
-local Indicator = Instance.new("Frame")
-
-Indicator.Size = UDim2.new(0,9,0,9)
-Indicator.Position = UDim2.new(0,15,0.5,-4)
-
-Indicator.BackgroundColor3 =
-    Color3.fromRGB(255,255,255)
-
-Indicator.BorderSizePixel = 0
-Indicator.Parent = Button
-
-local IndicatorCorner = Instance.new("UICorner")
-IndicatorCorner.CornerRadius = UDim.new(1,0)
-IndicatorCorner.Parent = Indicator
-
---==================================================
--- ESTADO DEL BOTON
---==================================================
-
-local function UpdateButton()
-
-    if InstaTP_Enabled then
-
-        Button.Text = "ON"
-
-        Indicator.BackgroundColor3 =
-            Color3.fromRGB(255,255,255)
-
-        TweenService:Create(
-            Button,
-            TweenInfo.new(0.2),
-            {
-                BackgroundColor3 =
-                    Color3.fromRGB(8,8,8)
-            }
-        ):Play()
-
-    else
-
-        Button.Text = "OFF"
-
-        Indicator.BackgroundColor3 =
-            Color3.fromRGB(70,70,70)
-
-        TweenService:Create(
-            Button,
-            TweenInfo.new(0.2),
-            {
-                BackgroundColor3 =
-                    Color3.fromRGB(25,25,25)
-            }
-        ):Play()
-    end
-end
-
---==================================================
--- CLICK ON / OFF
---==================================================
-
-Button.MouseButton1Click:Connect(function()
-
-    InstaTP_Enabled =
-        not InstaTP_Enabled
-
-    UpdateButton()
-
-    if InstaTP_Enabled then
-        print("INSTA TP -> ON")
-    else
-        print("INSTA TP -> OFF")
-
-        -- Si estaba ejecutándose,
-        -- las comprobaciones anteriores
-        -- harán que se detenga.
-        Busy = false
-    end
-end)
-
---==================================================
--- ANIMACION DEL BOTON
---==================================================
-
-task.spawn(function()
-
-    local Time = 0
-
-    while Gui.Parent do
-
-        Time += 0.05
-
-        local Pulse =
-            (math.sin(Time) + 1) / 2
-
-        Stroke.Transparency =
-            0.05 + Pulse * 0.25
-
-        task.wait(0.03)
-    end
-end)
-
-UpdateButton()
-
-print("KOXTA INSTA TP ON/OFF CARGADO")
