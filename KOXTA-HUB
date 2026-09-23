@@ -637,6 +637,216 @@ print("KOXTA INSTA TP - INTERFAZ CARGADA")
 print("SISTEMA TP ORIGINAL SIN MODIFICACIONES")
 
 
+
+
+--==================================================
+-- KOXTA INSTA STEAL - LOADING AISLADO
+-- NO MODIFICA EL SISTEMA TP ORIGINAL
+--==================================================
+
+local LS_Players = game:GetService("Players")
+local LS_TweenService = game:GetService("TweenService")
+local LS_RunService = game:GetService("RunService")
+local LS_Player = LS_Players.LocalPlayer
+local LS_PlayerGui = LS_Player:WaitForChild("PlayerGui")
+
+local LS_Photo2 = Vector3.new(544.83, 70.28, -363.31)
+local LS_Shown = false
+local LS_HasMovedAway = false
+local LS_Done = false
+
+local LS_Gui = Instance.new("ScreenGui")
+LS_Gui.Name = "KOXTA_INSTA_STEAL_LOADING_SAFE"
+LS_Gui.ResetOnSpawn = false
+LS_Gui.IgnoreGuiInset = true
+LS_Gui.DisplayOrder = 10000
+LS_Gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+LS_Gui.Enabled = false
+LS_Gui.Parent = LS_PlayerGui
+
+local LS_Background = Instance.new("Frame")
+LS_Background.Size = UDim2.fromScale(1, 1)
+LS_Background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+LS_Background.BorderSizePixel = 0
+LS_Background.Active = false
+LS_Background.Parent = LS_Gui
+
+local LS_Title = Instance.new("TextLabel")
+LS_Title.AnchorPoint = Vector2.new(0.5, 0.5)
+LS_Title.Position = UDim2.fromScale(0.5, 0.455)
+LS_Title.Size = UDim2.new(0, 520, 0, 48)
+LS_Title.BackgroundTransparency = 1
+LS_Title.Text = "KOXTA INSTA STEAL"
+LS_Title.Font = Enum.Font.GothamBlack
+LS_Title.TextSize = 30
+LS_Title.TextColor3 = Color3.fromRGB(245, 245, 245)
+LS_Title.TextStrokeTransparency = 0.35
+LS_Title.TextStrokeColor3 = Color3.fromRGB(80, 80, 80)
+LS_Title.ZIndex = 10
+LS_Title.Parent = LS_Background
+
+local LS_TitleGradient = Instance.new("UIGradient")
+LS_TitleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 80, 80))
+})
+LS_TitleGradient.Offset = Vector2.new(-1, 0)
+LS_TitleGradient.Parent = LS_Title
+
+local LS_Status = Instance.new("TextLabel")
+LS_Status.AnchorPoint = Vector2.new(0.5, 0.5)
+LS_Status.Position = UDim2.fromScale(0.5, 0.515)
+LS_Status.Size = UDim2.new(0, 400, 0, 24)
+LS_Status.BackgroundTransparency = 1
+LS_Status.Text = "INITIALIZING..."
+LS_Status.Font = Enum.Font.GothamMedium
+LS_Status.TextSize = 11
+LS_Status.TextColor3 = Color3.fromRGB(145, 145, 145)
+LS_Status.ZIndex = 10
+LS_Status.Parent = LS_Background
+
+local LS_BarBack = Instance.new("Frame")
+LS_BarBack.AnchorPoint = Vector2.new(0.5, 0.5)
+LS_BarBack.Position = UDim2.fromScale(0.5, 0.565)
+LS_BarBack.Size = UDim2.new(0, 360, 0, 5)
+LS_BarBack.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+LS_BarBack.BorderSizePixel = 0
+LS_BarBack.ZIndex = 10
+LS_BarBack.Parent = LS_Background
+
+local LS_Bar = Instance.new("Frame")
+LS_Bar.Size = UDim2.fromScale(0, 1)
+LS_Bar.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+LS_Bar.BorderSizePixel = 0
+LS_Bar.ZIndex = 11
+LS_Bar.Parent = LS_BarBack
+
+local LS_BarGradient = Instance.new("UIGradient")
+LS_BarGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(90, 90, 90)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(90, 90, 90))
+})
+LS_BarGradient.Parent = LS_Bar
+
+local LS_Percent = Instance.new("TextLabel")
+LS_Percent.AnchorPoint = Vector2.new(0.5, 0.5)
+LS_Percent.Position = UDim2.fromScale(0.5, 0.605)
+LS_Percent.Size = UDim2.new(0, 100, 0, 20)
+LS_Percent.BackgroundTransparency = 1
+LS_Percent.Text = "0%"
+LS_Percent.Font = Enum.Font.GothamBold
+LS_Percent.TextSize = 10
+LS_Percent.TextColor3 = Color3.fromRGB(125, 125, 125)
+LS_Percent.ZIndex = 10
+LS_Percent.Parent = LS_Background
+
+local LS_GradientTweenRunning = true
+
+task.spawn(function()
+    while LS_GradientTweenRunning and LS_Gui.Parent do
+        LS_TitleGradient.Offset = Vector2.new(-1, 0)
+        local T = LS_TweenService:Create(
+            LS_TitleGradient,
+            TweenInfo.new(1.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+            {Offset = Vector2.new(1, 0)}
+        )
+        T:Play()
+        T.Completed:Wait()
+        task.wait(0.25)
+    end
+end)
+
+local function LS_Show()
+    if LS_Done or LS_Shown then
+        return
+    end
+
+    LS_Shown = true
+    LS_Gui.Enabled = true
+    LS_Status.Text = "INSTA STEAL • SYSTEM ACTIVE"
+    LS_Percent.Text = "0%"
+    LS_Bar.Size = UDim2.fromScale(0, 1)
+end
+
+local function LS_Hide()
+    if LS_Done then
+        return
+    end
+
+    LS_Done = true
+    LS_GradientTweenRunning = false
+    LS_Status.Text = "COMPLETE"
+    LS_Percent.Text = "100%"
+    LS_Bar.Size = UDim2.fromScale(1, 1)
+
+    task.wait(0.08)
+    LS_Gui.Enabled = false
+end
+
+-- Visual progress only. It NEVER controls or delays the original sequence.
+task.spawn(function()
+    local P = 0
+    while not LS_Done do
+        if LS_Shown and P < 95 then
+            P = math.min(P + 1, 95)
+            LS_Bar.Size = UDim2.fromScale(P / 100, 1)
+            LS_Percent.Text = tostring(P) .. "%"
+        end
+        task.wait(0.055)
+    end
+end)
+
+-- Detecta la llegada real a Photo2; no usa un temporizador para cerrar la pantalla.
+task.spawn(function()
+    while not LS_Done do
+        if LS_Shown then
+            local Character = LS_Player.Character
+            local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+
+            if Root then
+                local Distance = (Root.Position - LS_Photo2).Magnitude
+
+                if Distance > 10 then
+                    LS_HasMovedAway = true
+                elseif LS_HasMovedAway and Distance <= 6 then
+                    LS_Hide()
+                end
+            end
+        end
+
+        LS_RunService.Heartbeat:Wait()
+    end
+end)
+
+-- Solo observa el primer ProximityPrompt activado por el jugador.
+local LS_Connected = {}
+local function LS_ConnectPrompt(Prompt)
+    if not Prompt:IsA("ProximityPrompt") or LS_Connected[Prompt] then
+        return
+    end
+
+    LS_Connected[Prompt] = true
+
+    Prompt.Triggered:Connect(function()
+        LS_Show()
+    end)
+end
+
+for _, Object in ipairs(workspace:GetDescendants()) do
+    if Object:IsA("ProximityPrompt") then
+        LS_ConnectPrompt(Object)
+    end
+end
+
+workspace.DescendantAdded:Connect(function(Object)
+    if Object:IsA("ProximityPrompt") then
+        LS_ConnectPrompt(Object)
+    end
+end)
+
 --==================================================
 -- SECUENCIA 20 CICLOS
 -- FOTO 1 -> AGARRAR -> FOTO 2
