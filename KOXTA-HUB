@@ -20516,13 +20516,9 @@ function v81.UnmountPetViewports()
 end
 
 --==================================================
--- KOXTA INSTA TP + RECOGER UNA VEZ
---==================================================
-
---==================================================
--- KOXTA INSTA TP + RECOGER UNA VEZ
--- TP -> RECOGER UNA VEZ -> FIN
--- NO HACE OTRO TP NI BUSCA OTRO HUEVO
+-- KOXTA INSTA TP - SOLO TELEPORT
+-- DETECTA MEJOR HUEVO -> TP -> FIN
+-- NO RECOGE / NO CARGA / NO ACTIVA PROMPT
 --==================================================
 
 local KOXTA_InstaTPBusy = false
@@ -20580,17 +20576,21 @@ f10(7, KOXTA_InstaButton)
 
 local function KOXTA_GetBestEggForInstaTP()
     local target = v60.Best()
+
     if type(target) ~= 'table' or type(target.rec) ~= 'table' then
         return nil
     end
 
     local rec = target.rec
+
     if rec.CarrierUserId ~= nil then
         return nil
     end
+
     if rec.State ~= 'Slot' and rec.State ~= 'Dropped' then
         return nil
     end
+
     if typeof(rec.BottomCFrame) ~= 'CFrame' then
         return nil
     end
@@ -20624,66 +20624,67 @@ local function KOXTA_UpdateInstaInfo()
     )
 end
 
-KOXTA_InstaTPButton = KOXTA_InstaButton
-
 KOXTA_InstaButton.MouseButton1Click:Connect(function()
     if KOXTA_InstaTPBusy then
         return
     end
 
     KOXTA_InstaTPBusy = true
-    v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'TP + RECOGER')
-    v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'BUSCANDO MEJOR HUEVO...')
 
-    task.spawn(function()
-        local ok, err = pcall(function()
-            local target = KOXTA_GetBestEggForInstaTP()
+    local ok, err = pcall(function()
+        local target = KOXTA_GetBestEggForInstaTP()
 
-            if not target then
-                error('no hay huevo valido')
-            end
-
-            local rec = target.rec
-            local position = rec.BottomCFrame.Position
-
-            -- Se detiene el farm ANTES del TP para que su ciclo automatico
-            -- no recoja otro huevo ni interfiera con este movimiento.
-            if v52.Running then
-                v45.Stop()
-            end
-            v257.abort = true
-
-            local character = localPlayer.Character
-            local root = character and character:FindFirstChild('HumanoidRootPart')
-            if not root then
-                error('sin HumanoidRootPart')
-            end
-
-            -- TP instantaneo al huevo.
-            root.CFrame = CFrame.new(position + Vector3.new(0, 2, 0))
-
-            -- Unicamente recoge ESTE huevo una vez.
-            -- No hay segundo TP, ni entrega, ni siguiente ciclo.
-            local grabbed = v60.CarryByPrompt(rec)
-
-            if grabbed then
-                v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'RECOGIDO ✓')
-                v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'RECOGIDO: ' .. tostring((target.info and target.info.name) or rec.AssetCategory or '--'))
-            else
-                v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'NO SE PUDO RECOGER')
-                v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'LLEGUE AL HUEVO, PERO NO SE ACTIVO EL CARRY')
-            end
-
-            -- IMPORTANTE:
-            -- El bloque termina aqui. No busca otro huevo y no vuelve a hacer TP.
-        end)
-
-        if not ok then
-            v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'INSTA TP')
-            v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'ERROR: ' .. tostring(err))
-            KOXTA_InstaTPBusy = false
+        if not target then
+            error('no hay huevo valido')
         end
+
+        local rec = target.rec
+        local position = rec.BottomCFrame.Position
+
+        -- Detener el farm ANTES del TP evita que el ciclo automático
+        -- recoja el huevo al llegar.
+        if v52.Running then
+            v45.Stop()
+        end
+
+        v257.abort = false
+
+        local character = localPlayer.Character
+        local root = character and character:FindFirstChild('HumanoidRootPart')
+
+        if not root then
+            error('sin HumanoidRootPart')
+        end
+
+        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'TP...')
+        v45.SetUiProperty(
+            KOXTA_InstaInfo,
+            'Text',
+            'TP A: ' .. tostring((target.info and target.info.name) or rec.AssetCategory or '--')
+        )
+
+        -- ÚNICA acción sobre el personaje:
+        -- TP al mejor huevo.
+        root.CFrame = CFrame.new(position + Vector3.new(0, 2, 0))
+
+        -- FIN.
+        -- No CarryByPrompt
+        -- No fireproximityprompt
+        -- No TryCarry
+        -- No Fetch
+        -- No segundo TP
+        -- No entrega
+        -- No interacción con el huevo
     end)
+
+    if not ok then
+        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'INSTA TP')
+        v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'ERROR: ' .. tostring(err))
+    else
+        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'TP ✓')
+    end
+
+    KOXTA_InstaTPBusy = false
 end)
 
 pcall(KOXTA_UpdateInstaInfo)
