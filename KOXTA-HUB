@@ -1,560 +1,390 @@
 --==================================================
 -- KOXTA INSTA STEAL - BLACK EDITION
--- INTERFAZ / LOADING
+-- INTERFAZ + LOADING LIGADO A FOTO 2
 --==================================================
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local UIPlayers = game:GetService("Players")
+local UITweenService = game:GetService("TweenService")
+local UIUserInputService = game:GetService("UserInputService")
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+local UIPlayer = UIPlayers.LocalPlayer
+local UIPlayerGui = UIPlayer:WaitForChild("PlayerGui")
+local UILogo = "rbxassetid://103645600156879"
 
-local LOGO = "rbxassetid://103645600156879"
+local UIGui = Instance.new("ScreenGui")
+UIGui.Name = "KOXTA_INSTA_TP"
+UIGui.ResetOnSpawn = false
+UIGui.IgnoreGuiInset = true
+UIGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+UIGui.Parent = UIPlayerGui
 
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "KOXTA_INSTA_TP"
-Gui.ResetOnSpawn = false
-Gui.IgnoreGuiInset = true
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-Gui.Parent = PlayerGui
-
-local function Tween(Object, Time, Properties, Style, Direction)
-    local Info = TweenInfo.new(
-        Time,
-        Style or Enum.EasingStyle.Sine,
-        Direction or Enum.EasingDirection.InOut
-    )
-    local T = TweenService:Create(Object, Info, Properties)
+local function UITween(Object,Time,Properties,Style,Direction)
+    local Info = TweenInfo.new(Time,Style or Enum.EasingStyle.Sine,Direction or Enum.EasingDirection.InOut)
+    local T = UITweenService:Create(Object,Info,Properties)
     T:Play()
     return T
 end
 
---==================================================
--- PANEL
---==================================================
+local UIPanel = Instance.new("Frame")
+UIPanel.Name = "Panel"
+UIPanel.Size = UDim2.fromOffset(255,190)
+UIPanel.Position = UDim2.new(1,-270,0,78)
+UIPanel.BackgroundColor3 = Color3.fromRGB(7,7,8)
+UIPanel.BorderSizePixel = 0
+UIPanel.ClipsDescendants = true
+UIPanel.ZIndex = 20
+UIPanel.Parent = UIGui
 
-local Panel = Instance.new("Frame")
-Panel.Name = "Panel"
-Panel.Size = UDim2.fromOffset(255,190)
-Panel.Position = UDim2.new(1,-270,0,78)
-Panel.BackgroundColor3 = Color3.fromRGB(7,7,8)
-Panel.BorderSizePixel = 0
-Panel.ClipsDescendants = true
-Panel.ZIndex = 20
-Panel.Parent = Gui
+local UIPanelCorner = Instance.new("UICorner")
+UIPanelCorner.CornerRadius = UDim.new(0,16)
+UIPanelCorner.Parent = UIPanel
 
-local PanelCorner = Instance.new("UICorner")
-PanelCorner.CornerRadius = UDim.new(0,16)
-PanelCorner.Parent = Panel
+local UIPanelStroke = Instance.new("UIStroke")
+UIPanelStroke.Thickness = 1.5
+UIPanelStroke.Transparency = 0.25
+UIPanelStroke.Color = Color3.fromRGB(255,255,255)
+UIPanelStroke.Parent = UIPanel
 
-local PanelStroke = Instance.new("UIStroke")
-PanelStroke.Thickness = 1.5
-PanelStroke.Transparency = 0.25
-PanelStroke.Color = Color3.fromRGB(255,255,255)
-PanelStroke.Parent = Panel
-
-local BackgroundGradient = Instance.new("UIGradient")
-BackgroundGradient.Color = ColorSequence.new({
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0,Color3.fromRGB(15,15,17)),
     ColorSequenceKeypoint.new(0.5,Color3.fromRGB(5,5,6)),
     ColorSequenceKeypoint.new(1,Color3.fromRGB(11,11,13))
 })
-BackgroundGradient.Rotation = 45
-BackgroundGradient.Parent = Panel
+UIGradient.Rotation = 45
+UIGradient.Parent = UIPanel
 
---==================================================
--- DECORACIÓN
---==================================================
-
-for i = 1,10 do
-    local Line = Instance.new("Frame")
-    Line.Size = UDim2.new(0,math.random(20,70),0,1)
-    Line.Position = UDim2.new(0,math.random(5,245),0,math.random(5,180))
-    Line.BackgroundColor3 = Color3.fromRGB(255,255,255)
-    Line.BackgroundTransparency = 0.94
-    Line.BorderSizePixel = 0
-    Line.ZIndex = 21
-    Line.Parent = Panel
+for i=1,10 do
+    local Line=Instance.new("Frame")
+    Line.Size=UDim2.new(0,math.random(20,70),0,1)
+    Line.Position=UDim2.new(0,math.random(5,245),0,math.random(5,180))
+    Line.BackgroundColor3=Color3.fromRGB(255,255,255)
+    Line.BackgroundTransparency=0.94
+    Line.BorderSizePixel=0
+    Line.ZIndex=21
+    Line.Parent=UIPanel
 end
 
-for i = 1,25 do
-    local Particle = Instance.new("Frame")
-    Particle.Size = UDim2.fromOffset(math.random(1,2),math.random(1,2))
-    Particle.Position = UDim2.new(math.random(),0,math.random(),0)
-    Particle.BackgroundColor3 = Color3.fromRGB(255,255,255)
-    Particle.BackgroundTransparency = math.random(75,95)/100
-    Particle.BorderSizePixel = 0
-    Particle.ZIndex = 22
-    Particle.Parent = Panel
-
-    task.spawn(function()
-        while Particle.Parent do
-            Tween(Particle,math.random(12,25)/10,{
-                Position = UDim2.new(
-                    Particle.Position.X.Scale,0,
-                    0,math.random(5,175)
-                ),
-                BackgroundTransparency = math.random(75,95)/100
-            })
-            task.wait(math.random(10,25)/10)
-        end
-    end)
+for i=1,25 do
+    local Particle=Instance.new("Frame")
+    Particle.Size=UDim2.fromOffset(math.random(1,2),math.random(1,2))
+    Particle.Position=UDim2.new(math.random(),0,math.random(),0)
+    Particle.BackgroundColor3=Color3.fromRGB(255,255,255)
+    Particle.BackgroundTransparency=math.random(75,95)/100
+    Particle.BorderSizePixel=0
+    Particle.ZIndex=22
+    Particle.Parent=UIPanel
 end
 
-local Scanner = Instance.new("Frame")
-Scanner.Size = UDim2.new(1,-20,0,1)
-Scanner.Position = UDim2.new(0,10,0,45)
-Scanner.BackgroundColor3 = Color3.fromRGB(255,255,255)
-Scanner.BackgroundTransparency = 0.88
-Scanner.BorderSizePixel = 0
-Scanner.ZIndex = 23
-Scanner.Parent = Panel
+local Scanner=Instance.new("Frame")
+Scanner.Size=UDim2.new(1,-20,0,1)
+Scanner.Position=UDim2.new(0,10,0,45)
+Scanner.BackgroundColor3=Color3.fromRGB(255,255,255)
+Scanner.BackgroundTransparency=0.88
+Scanner.BorderSizePixel=0
+Scanner.ZIndex=23
+Scanner.Parent=UIPanel
 
-task.spawn(function()
-    while Scanner.Parent do
-        Scanner.Position = UDim2.new(0,10,0,45)
-        Tween(Scanner,1.8,{
-            Position = UDim2.new(0,10,0,145),
-            BackgroundTransparency = 0.95
-        })
-        task.wait(1.8)
-    end
-end)
+local UILogoImage=Instance.new("ImageLabel")
+UILogoImage.Size=UDim2.fromOffset(58,58)
+UILogoImage.Position=UDim2.new(0,15,0,12)
+UILogoImage.BackgroundTransparency=1
+UILogoImage.Image=UILogo
+UILogoImage.ScaleType=Enum.ScaleType.Fit
+UILogoImage.ZIndex=30
+UILogoImage.Parent=UIPanel
 
---==================================================
--- LOGO / TÍTULOS
---==================================================
+local UITitle=Instance.new("TextLabel")
+UITitle.Size=UDim2.new(1,-85,0,25)
+UITitle.Position=UDim2.new(0,82,0,15)
+UITitle.BackgroundTransparency=1
+UITitle.Text="KOXTA INSTA TP"
+UITitle.Font=Enum.Font.GothamBold
+UITitle.TextSize=17
+UITitle.TextColor3=Color3.fromRGB(220,220,225)
+UITitle.TextXAlignment=Enum.TextXAlignment.Left
+UITitle.ZIndex=40
+UITitle.Parent=UIPanel
 
-local Logo = Instance.new("ImageLabel")
-Logo.Size = UDim2.fromOffset(58,58)
-Logo.Position = UDim2.new(0,15,0,12)
-Logo.BackgroundTransparency = 1
-Logo.Image = LOGO
-Logo.ScaleType = Enum.ScaleType.Fit
-Logo.ZIndex = 30
-Logo.Parent = Panel
+local UISubtitle=Instance.new("TextLabel")
+UISubtitle.Size=UDim2.new(1,-90,0,18)
+UISubtitle.Position=UDim2.new(0,83,0,38)
+UISubtitle.BackgroundTransparency=1
+UISubtitle.Text="[ BLACK EDITION ]"
+UISubtitle.Font=Enum.Font.Gotham
+UISubtitle.TextSize=10
+UISubtitle.TextColor3=Color3.fromRGB(120,120,125)
+UISubtitle.TextXAlignment=Enum.TextXAlignment.Left
+UISubtitle.ZIndex=40
+UISubtitle.Parent=UIPanel
 
-local LogoGlow = Instance.new("ImageLabel")
-LogoGlow.Size = UDim2.fromOffset(72,72)
-LogoGlow.Position = UDim2.new(0,8,0,5)
-LogoGlow.BackgroundTransparency = 1
-LogoGlow.Image = LOGO
-LogoGlow.ImageTransparency = 0.92
-LogoGlow.ImageColor3 = Color3.fromRGB(255,255,255)
-LogoGlow.ScaleType = Enum.ScaleType.Fit
-LogoGlow.ZIndex = 29
-LogoGlow.Parent = Panel
+local UIStatus=Instance.new("TextLabel")
+UIStatus.Size=UDim2.new(1,-24,0,20)
+UIStatus.Position=UDim2.new(0,12,0,78)
+UIStatus.BackgroundTransparency=1
+UIStatus.Text="●  SYSTEM READY"
+UIStatus.Font=Enum.Font.GothamMedium
+UIStatus.TextSize=11
+UIStatus.TextColor3=Color3.fromRGB(205,205,210)
+UIStatus.TextXAlignment=Enum.TextXAlignment.Left
+UIStatus.ZIndex=40
+UIStatus.Parent=UIPanel
 
-task.spawn(function()
-    while LogoGlow.Parent do
-        Tween(LogoGlow,1,{ImageTransparency=0.82})
-        task.wait(1)
-        Tween(LogoGlow,1,{ImageTransparency=0.94})
-        task.wait(1)
-    end
-end)
+local UIInstaButton=Instance.new("TextButton")
+UIInstaButton.Size=UDim2.new(1,-24,0,38)
+UIInstaButton.Position=UDim2.new(0,12,0,105)
+UIInstaButton.BackgroundColor3=Color3.fromRGB(15,15,16)
+UIInstaButton.BorderSizePixel=0
+UIInstaButton.Text="INSTA TP   •   ON"
+UIInstaButton.Font=Enum.Font.GothamBold
+UIInstaButton.TextSize=12
+UIInstaButton.TextColor3=Color3.fromRGB(205,205,210)
+UIInstaButton.AutoButtonColor=false
+UIInstaButton.ZIndex=45
+UIInstaButton.Parent=UIPanel
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,-85,0,25)
-Title.Position = UDim2.new(0,82,0,15)
-Title.BackgroundTransparency = 1
-Title.Text = "KOXTA INSTA TP"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 17
-Title.TextColor3 = Color3.fromRGB(220,220,225)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 40
-Title.Parent = Panel
+local UIInstaCorner=Instance.new("UICorner")
+UIInstaCorner.CornerRadius=UDim.new(0,10)
+UIInstaCorner.Parent=UIInstaButton
 
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Size = UDim2.new(1,-90,0,18)
-Subtitle.Position = UDim2.new(0,83,0,38)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Text = "[ BLACK EDITION ]"
-Subtitle.Font = Enum.Font.Gotham
-Subtitle.TextSize = 10
-Subtitle.TextColor3 = Color3.fromRGB(120,120,125)
-Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-Subtitle.ZIndex = 40
-Subtitle.Parent = Panel
+local UIInstaStroke=Instance.new("UIStroke")
+UIInstaStroke.Thickness=1
+UIInstaStroke.Color=Color3.fromRGB(0,220,90)
+UIInstaStroke.Transparency=0.25
+UIInstaStroke.Parent=UIInstaButton
 
-local Separator = Instance.new("Frame")
-Separator.Size = UDim2.new(1,-24,0,1)
-Separator.Position = UDim2.new(0,12,0,72)
-Separator.BackgroundColor3 = Color3.fromRGB(255,255,255)
-Separator.BackgroundTransparency = 0.88
-Separator.BorderSizePixel = 0
-Separator.ZIndex = 40
-Separator.Parent = Panel
+local UIReady=Instance.new("TextLabel")
+UIReady.Size=UDim2.new(1,-24,0,18)
+UIReady.Position=UDim2.new(0,12,0,150)
+UIReady.BackgroundTransparency=1
+UIReady.Text="INTERFACE READY"
+UIReady.Font=Enum.Font.Gotham
+UIReady.TextSize=9
+UIReady.TextColor3=Color3.fromRGB(120,120,125)
+UIReady.TextXAlignment=Enum.TextXAlignment.Left
+UIReady.ZIndex=40
+UIReady.Parent=UIPanel
 
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1,-24,0,20)
-Status.Position = UDim2.new(0,12,0,78)
-Status.BackgroundTransparency = 1
-Status.Text = "●  SYSTEM READY"
-Status.Font = Enum.Font.GothamMedium
-Status.TextSize = 11
-Status.TextColor3 = Color3.fromRGB(205,205,210)
-Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.ZIndex = 40
-Status.Parent = Panel
+local UIFloat=Instance.new("ImageButton")
+UIFloat.Size=UDim2.fromOffset(54,54)
+UIFloat.Position=UDim2.new(1,-68,0,16)
+UIFloat.BackgroundColor3=Color3.fromRGB(0,0,0)
+UIFloat.BorderSizePixel=0
+UIFloat.Image=UILogo
+UIFloat.ZIndex=200
+UIFloat.Parent=UIGui
 
-local InstaButton = Instance.new("TextButton")
-InstaButton.Size = UDim2.new(1,-24,0,38)
-InstaButton.Position = UDim2.new(0,12,0,105)
-InstaButton.BackgroundColor3 = Color3.fromRGB(15,15,16)
-InstaButton.BorderSizePixel = 0
-InstaButton.Text = "INSTA TP   •   ON"
-InstaButton.Font = Enum.Font.GothamBold
-InstaButton.TextSize = 12
-InstaButton.TextColor3 = Color3.fromRGB(205,205,210)
-InstaButton.AutoButtonColor = false
-InstaButton.ZIndex = 45
-InstaButton.Parent = Panel
+local UIFloatCorner=Instance.new("UICorner")
+UIFloatCorner.CornerRadius=UDim.new(1,0)
+UIFloatCorner.Parent=UIFloat
 
-local InstaCorner = Instance.new("UICorner")
-InstaCorner.CornerRadius = UDim.new(0,10)
-InstaCorner.Parent = InstaButton
-
-local InstaStroke = Instance.new("UIStroke")
-InstaStroke.Thickness = 1
-InstaStroke.Color = Color3.fromRGB(0,220,90)
-InstaStroke.Transparency = 0.25
-InstaStroke.Parent = InstaButton
-
-local ReadyText = Instance.new("TextLabel")
-ReadyText.Size = UDim2.new(1,-24,0,18)
-ReadyText.Position = UDim2.new(0,12,0,150)
-ReadyText.BackgroundTransparency = 1
-ReadyText.Text = "INTERFACE READY"
-ReadyText.Font = Enum.Font.Gotham
-ReadyText.TextSize = 9
-ReadyText.TextColor3 = Color3.fromRGB(120,120,125)
-ReadyText.TextXAlignment = Enum.TextXAlignment.Left
-ReadyText.ZIndex = 40
-ReadyText.Parent = Panel
-
-local BottomLine = Instance.new("Frame")
-BottomLine.Size = UDim2.new(1,-24,0,1)
-BottomLine.Position = UDim2.new(0,12,0,173)
-BottomLine.BackgroundColor3 = Color3.fromRGB(255,255,255)
-BottomLine.BackgroundTransparency = 0.9
-BottomLine.BorderSizePixel = 0
-BottomLine.ZIndex = 40
-BottomLine.Parent = Panel
+local UIFloatStroke=Instance.new("UIStroke")
+UIFloatStroke.Thickness=2
+UIFloatStroke.Color=Color3.fromRGB(255,255,255)
+UIFloatStroke.Parent=UIFloat
 
 --==================================================
--- BOTÓN FLOTANTE
+-- LOADING: QUEDA VISIBLE HASTA FOTO 2
 --==================================================
 
-local Float = Instance.new("ImageButton")
-Float.Size = UDim2.fromOffset(54,54)
-Float.Position = UDim2.new(1,-68,0,16)
-Float.BackgroundColor3 = Color3.fromRGB(0,0,0)
-Float.BorderSizePixel = 0
-Float.Image = LOGO
-Float.ScaleType = Enum.ScaleType.Crop
-Float.ZIndex = 200
-Float.Parent = Gui
+local UILoading=Instance.new("Frame")
+UILoading.Name="LoadingScreen"
+UILoading.Size=UDim2.fromScale(1,1)
+UILoading.BackgroundColor3=Color3.fromRGB(0,0,0)
+UILoading.BorderSizePixel=0
+UILoading.Visible=false
+UILoading.ZIndex=500
+UILoading.Parent=UIGui
 
-local FloatCorner = Instance.new("UICorner")
-FloatCorner.CornerRadius = UDim.new(1,0)
-FloatCorner.Parent = Float
+local UILoadingTitle=Instance.new("TextLabel")
+UILoadingTitle.Size=UDim2.new(1,0,0,70)
+UILoadingTitle.Position=UDim2.new(0,0,0.43,0)
+UILoadingTitle.BackgroundTransparency=1
+UILoadingTitle.Text="KOXTA INSTA STEAL"
+UILoadingTitle.Font=Enum.Font.GothamBlack
+UILoadingTitle.TextSize=32
+UILoadingTitle.TextColor3=Color3.fromRGB(245,245,245)
+UILoadingTitle.TextStrokeColor3=Color3.fromRGB(255,255,255)
+UILoadingTitle.TextStrokeTransparency=0.75
+UILoadingTitle.ZIndex=501
+UILoadingTitle.Parent=UILoading
 
-local FloatStroke = Instance.new("UIStroke")
-FloatStroke.Thickness = 2
-FloatStroke.Color = Color3.fromRGB(255,255,255)
-FloatStroke.Parent = Float
+local UIShine=Instance.new("Frame")
+UIShine.Size=UDim2.fromOffset(35,90)
+UIShine.Position=UDim2.new(0,-70,0.43,-10)
+UIShine.BackgroundColor3=Color3.fromRGB(255,255,255)
+UIShine.BackgroundTransparency=0.88
+UIShine.BorderSizePixel=0
+UIShine.Rotation=15
+UIShine.ZIndex=502
+UIShine.Parent=UILoading
 
---==================================================
--- LOADING KOXTA INSTA STEAL
---==================================================
-
-local LoadingScreen = Instance.new("Frame")
-LoadingScreen.Name = "LoadingScreen"
-LoadingScreen.Size = UDim2.fromScale(1,1)
-LoadingScreen.BackgroundColor3 = Color3.fromRGB(0,0,0)
-LoadingScreen.BorderSizePixel = 0
-LoadingScreen.Visible = false
-LoadingScreen.ZIndex = 500
-LoadingScreen.Parent = Gui
-
-local LoadingTitle = Instance.new("TextLabel")
-LoadingTitle.Size = UDim2.new(1,0,0,70)
-LoadingTitle.Position = UDim2.new(0,0,0.43,0)
-LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "KOXTA INSTA STEAL"
-LoadingTitle.Font = Enum.Font.GothamBlack
-LoadingTitle.TextSize = 32
-LoadingTitle.TextColor3 = Color3.fromRGB(245,245,245)
-LoadingTitle.TextStrokeColor3 = Color3.fromRGB(255,255,255)
-LoadingTitle.TextStrokeTransparency = 0.75
-LoadingTitle.ZIndex = 501
-LoadingTitle.Parent = LoadingScreen
-
-local Shine = Instance.new("Frame")
-Shine.Size = UDim2.fromOffset(35,90)
-Shine.Position = UDim2.new(0,-70,0.43,-10)
-Shine.BackgroundColor3 = Color3.fromRGB(255,255,255)
-Shine.BackgroundTransparency = 0.88
-Shine.BorderSizePixel = 0
-Shine.Rotation = 15
-Shine.ZIndex = 502
-Shine.Parent = LoadingScreen
-
-local ShineGradient = Instance.new("UIGradient")
-ShineGradient.Transparency = NumberSequence.new({
+local UIShineGradient=Instance.new("UIGradient")
+UIShineGradient.Transparency=NumberSequence.new({
     NumberSequenceKeypoint.new(0,1),
     NumberSequenceKeypoint.new(0.5,0),
     NumberSequenceKeypoint.new(1,1)
 })
-ShineGradient.Parent = Shine
+UIShineGradient.Parent=UIShine
 
-task.spawn(function()
-    while Shine.Parent do
-        Shine.Position = UDim2.new(0,-70,0.43,-10)
-        Tween(Shine,1.15,{
-            Position=UDim2.new(0,700,0.43,-10)
-        },Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-        task.wait(1.7)
-    end
-end)
+local UILoadingText=Instance.new("TextLabel")
+UILoadingText.Size=UDim2.new(1,0,0,25)
+UILoadingText.Position=UDim2.new(0,0,0.55,0)
+UILoadingText.BackgroundTransparency=1
+UILoadingText.Text="LOADING"
+UILoadingText.Font=Enum.Font.GothamMedium
+UILoadingText.TextSize=11
+UILoadingText.TextColor3=Color3.fromRGB(150,150,150)
+UILoadingText.ZIndex=501
+UILoadingText.Parent=UILoading
 
-local LoadingText = Instance.new("TextLabel")
-LoadingText.Size = UDim2.new(1,0,0,25)
-LoadingText.Position = UDim2.new(0,0,0.55,0)
-LoadingText.BackgroundTransparency = 1
-LoadingText.Text = "LOADING"
-LoadingText.Font = Enum.Font.GothamMedium
-LoadingText.TextSize = 11
-LoadingText.TextColor3 = Color3.fromRGB(150,150,150)
-LoadingText.ZIndex = 501
-LoadingText.Parent = LoadingScreen
+local UIBarBackground=Instance.new("Frame")
+UIBarBackground.Size=UDim2.new(0.55,0,0,4)
+UIBarBackground.Position=UDim2.new(0.225,0,0.62,0)
+UIBarBackground.BackgroundColor3=Color3.fromRGB(30,30,30)
+UIBarBackground.BorderSizePixel=0
+UIBarBackground.ZIndex=501
+UIBarBackground.Parent=UILoading
 
-task.spawn(function()
-    local Dots={"LOADING","LOADING.","LOADING..","LOADING..."}
-    local Index=1
-    while LoadingText.Parent do
-        LoadingText.Text=Dots[Index]
-        Index=Index%#Dots+1
-        task.wait(0.3)
-    end
-end)
+local UIBar=Instance.new("Frame")
+UIBar.Size=UDim2.new(0,0,1,0)
+UIBar.BackgroundColor3=Color3.fromRGB(255,255,255)
+UIBar.BorderSizePixel=0
+UIBar.ZIndex=502
+UIBar.Parent=UIBarBackground
 
-local BarBackground = Instance.new("Frame")
-BarBackground.Size = UDim2.new(0.55,0,0,4)
-BarBackground.Position = UDim2.new(0.225,0,0.62,0)
-BarBackground.BackgroundColor3 = Color3.fromRGB(30,30,30)
-BarBackground.BorderSizePixel = 0
-BarBackground.ZIndex = 501
-BarBackground.Parent = LoadingScreen
+local UIPercent=Instance.new("TextLabel")
+UIPercent.Size=UDim2.new(1,0,0,20)
+UIPercent.Position=UDim2.new(0,0,0.64,0)
+UIPercent.BackgroundTransparency=1
+UIPercent.Text="0%"
+UIPercent.Font=Enum.Font.Gotham
+UIPercent.TextSize=9
+UIPercent.TextColor3=Color3.fromRGB(100,100,100)
+UIPercent.ZIndex=501
+UIPercent.Parent=UILoading
 
-local BarCorner = Instance.new("UICorner")
-BarCorner.CornerRadius = UDim.new(1,0)
-BarCorner.Parent = BarBackground
+local UIEnabled=true
+local UISequenceRunning=false
 
-local Bar = Instance.new("Frame")
-Bar.Size = UDim2.new(0,0,1,0)
-Bar.BackgroundColor3 = Color3.fromRGB(255,255,255)
-Bar.BorderSizePixel = 0
-Bar.ZIndex = 502
-Bar.Parent = BarBackground
+local function UIShowLoading()
+    UILoading.Visible=true
+    UILoading.BackgroundTransparency=0
+    UILoadingTitle.TextTransparency=1
+    UILoadingText.TextTransparency=1
+    UIBar.Size=UDim2.new(0,0,1,0)
+    UIPercent.Text="0%"
 
-local BarProgressCorner = Instance.new("UICorner")
-BarProgressCorner.CornerRadius = UDim.new(1,0)
-BarProgressCorner.Parent = Bar
-
-local Percent = Instance.new("TextLabel")
-Percent.Size = UDim2.new(1,0,0,20)
-Percent.Position = UDim2.new(0,0,0.64,0)
-Percent.BackgroundTransparency = 1
-Percent.Text = "0%"
-Percent.Font = Enum.Font.Gotham
-Percent.TextSize = 9
-Percent.TextColor3 = Color3.fromRGB(100,100,100)
-Percent.ZIndex = 501
-Percent.Parent = LoadingScreen
-
-local function ShowLoading()
-    LoadingScreen.Visible = true
-    LoadingScreen.BackgroundTransparency = 0
-    LoadingTitle.TextTransparency = 1
-    LoadingText.TextTransparency = 1
-    Bar.Size = UDim2.new(0,0,1,0)
-    Percent.Text = "0%"
-
-    Tween(LoadingTitle,0.45,{TextTransparency=0},
-        Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-
-    Tween(LoadingText,0.45,{TextTransparency=0},
-        Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+    UITween(UILoadingTitle,0.45,{TextTransparency=0})
+    UITween(UILoadingText,0.45,{TextTransparency=0})
 
     for i=0,100,2 do
-        Bar.Size=UDim2.new(i/100,0,1,0)
-        Percent.Text=tostring(i).."%"
+        if not UILoading.Visible then return end
+        UIBar.Size=UDim2.new(i/100,0,1,0)
+        UIPercent.Text=tostring(i).."%"
         task.wait(0.015)
     end
-
-    -- La barra termina, pero la pantalla se mantiene visible.
-    -- Se cerrará únicamente cuando el sistema original llegue a Foto 2.
-    task.wait(0.15)
+    -- NO ocultar aquí.
 end
 
-local function HideLoading()
-    if not LoadingScreen.Visible then
-        return
-    end
+local function UIHideLoading()
+    if not UILoading.Visible then return end
 
-    Tween(
-        LoadingScreen,
-        0.35,
-        {BackgroundTransparency=1},
-        Enum.EasingStyle.Quad,
-        Enum.EasingDirection.In
-    )
-
-    Tween(
-        LoadingTitle,
-        0.25,
-        {TextTransparency=1}
-    )
-
-    Tween(
-        LoadingText,
-        0.25,
-        {TextTransparency=1}
-    )
+    UITween(UILoading,0.35,{BackgroundTransparency=1},
+        Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+    UITween(UILoadingTitle,0.25,{TextTransparency=1})
+    UITween(UILoadingText,0.25,{TextTransparency=1})
 
     task.wait(0.4)
 
-    LoadingScreen.Visible = false
-    LoadingScreen.BackgroundTransparency = 0
+    UILoading.Visible=false
+    UILoading.BackgroundTransparency=0
 end
 
---==================================================
--- ESTADO VISUAL
--- NO CAMBIA EL SISTEMA ORIGINAL
---==================================================
-
-local Enabled = true
-
-InstaButton.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-
-    if Enabled then
-        InstaButton.Text="INSTA TP   •   ON"
-        InstaButton.TextColor3=Color3.fromRGB(205,205,210)
-        InstaStroke.Color=Color3.fromRGB(0,220,90)
-        Status.Text="●  SYSTEM READY"
+UIInstaButton.MouseButton1Click:Connect(function()
+    UIEnabled=not UIEnabled
+    if UIEnabled then
+        UIInstaButton.Text="INSTA TP   •   ON"
+        UIInstaButton.TextColor3=Color3.fromRGB(205,205,210)
+        UIInstaStroke.Color=Color3.fromRGB(0,220,90)
+        UIStatus.Text="●  SYSTEM READY"
     else
-        InstaButton.Text="INSTA TP   •   OFF"
-        InstaButton.TextColor3=Color3.fromRGB(230,70,70)
-        InstaStroke.Color=Color3.fromRGB(230,70,70)
-        Status.Text="●  SYSTEM STANDBY"
+        UIInstaButton.Text="INSTA TP   •   OFF"
+        UIInstaButton.TextColor3=Color3.fromRGB(230,70,70)
+        UIInstaStroke.Color=Color3.fromRGB(230,70,70)
+        UIStatus.Text="●  SYSTEM STANDBY"
     end
 end)
 
-Float.MouseButton1Click:Connect(function()
-    Panel.Visible = not Panel.Visible
+UIFloat.MouseButton1Click:Connect(function()
+    UIPanel.Visible=not UIPanel.Visible
 end)
 
 --==================================================
--- DRAG
+-- TRIGGER VISUAL DEL PRIMER PROMPT
 --==================================================
 
-local Dragging=false
-local DragStart
-local StartPosition
+local UIConnections={}
 
-Title.InputBegan:Connect(function(Input)
-    if Input.UserInputType==Enum.UserInputType.MouseButton1
-        or Input.UserInputType==Enum.UserInputType.Touch then
-        Dragging=true
-        DragStart=Input.Position
-        StartPosition=Panel.Position
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(Input)
-    if not Dragging then return end
-
-    if Input.UserInputType==Enum.UserInputType.MouseMovement
-        or Input.UserInputType==Enum.UserInputType.Touch then
-
-        local Delta=Input.Position-DragStart
-
-        Panel.Position=UDim2.new(
-            StartPosition.X.Scale,
-            StartPosition.X.Offset+Delta.X,
-            StartPosition.Y.Scale,
-            StartPosition.Y.Offset+Delta.Y
-        )
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType==Enum.UserInputType.MouseButton1
-        or Input.UserInputType==Enum.UserInputType.Touch then
-        Dragging=false
-    end
-end)
-
---==================================================
--- ANIMACIONES VISUALES
---==================================================
-
-task.spawn(function()
-    while Panel.Parent do
-        Tween(PanelStroke,0.7,{Transparency=0.15})
-        task.wait(0.7)
-        Tween(PanelStroke,0.7,{Transparency=0.65})
-        task.wait(0.7)
-    end
-end)
-
-task.spawn(function()
-    while Float.Parent do
-        Tween(FloatStroke,0.6,{Transparency=0.15})
-        task.wait(0.6)
-        Tween(FloatStroke,0.6,{Transparency=0.65})
-        task.wait(0.6)
-    end
-end)
-
---==================================================
--- DISPARADOR DEL SISTEMA ORIGINAL
---==================================================
-
-local function AttachLoadingToPrompt(Prompt)
+local function ConnectLoadingPrompt(Prompt)
     if not Prompt:IsA("ProximityPrompt") then return end
+    if UIConnections[Prompt] then return end
+    UIConnections[Prompt]=true
 
-    if Prompt:GetAttribute("KOXTA_LoadingConnected") then
-        return
-    end
-
-    Prompt:SetAttribute("KOXTA_LoadingConnected",true)
-
-    -- La conexión original del archivo se mantiene abajo.
-    -- Esta conexión SOLO muestra la interfaz de loading.
     Prompt.Triggered:Connect(function()
-        if not Enabled then return end
-        if Busy then return end
+        if not UIEnabled then return end
+        if UISequenceRunning then return end
 
-        -- El loading comienza con el primer ProximityPrompt.
-        task.spawn(ShowLoading)
+        UISequenceRunning=true
+        UIStatus.Text="●  SYSTEM ACTIVE"
+        task.spawn(UIShowLoading)
     end)
 end
 
 for _,Object in ipairs(workspace:GetDescendants()) do
     if Object:IsA("ProximityPrompt") then
-        AttachLoadingToPrompt(Object)
+        ConnectLoadingPrompt(Object)
     end
 end
 
 workspace.DescendantAdded:Connect(function(Object)
     if Object:IsA("ProximityPrompt") then
-        AttachLoadingToPrompt(Object)
+        ConnectLoadingPrompt(Object)
+    end
+end)
+
+--==================================================
+-- DETECTOR REAL DE FOTO 2
+--==================================================
+
+local FinalPhoto2=Vector3.new(544.83,70.28,-363.31)
+
+task.spawn(function()
+    while UIGui.Parent do
+        if UISequenceRunning and UILoading.Visible then
+
+            local Character=UIPlayer.Character
+            local Root=Character and Character:FindFirstChild("HumanoidRootPart")
+
+            if Root then
+                local Distance=(Root.Position-FinalPhoto2).Magnitude
+
+                if Distance <= 2 then
+                    task.wait()
+
+                    local Character2=UIPlayer.Character
+                    local Root2=Character2 and Character2:FindFirstChild("HumanoidRootPart")
+
+                    if Root2 and (Root2.Position-FinalPhoto2).Magnitude <= 2 then
+                        UISequenceRunning=false
+                        UIStatus.Text="●  SYSTEM READY"
+                        UIHideLoading()
+                    end
+                end
+            end
+        end
+
+        task.wait(0.03)
     end
 end)
 
@@ -575,10 +405,10 @@ end)
 -- -> TP FOTO 2
 --==================================================
 
-local CorePlayers = game:GetService("Players")
-local CoreRunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
-local CorePlayer = CorePlayers.LocalPlayer
+local Player = Players.LocalPlayer
 local Busy = false
 local Connections = {}
 
@@ -716,7 +546,7 @@ local function MoveToPhoto1(Character)
                 CFrame.new(Photo1)
             )
 
-            CoreRunService.Heartbeat:Wait()
+            RunService.Heartbeat:Wait()
 
             -- Reforzar posición
             if Root.Parent then
@@ -738,7 +568,7 @@ local function MoveToPhoto1(Character)
             (Photo1 - CurrentPosition).Unit
 
         local Delta =
-            CoreRunService.Heartbeat:Wait()
+            RunService.Heartbeat:Wait()
 
         local Step =
             math.min(
@@ -933,7 +763,7 @@ local function AutoGrab()
                 os.clock() - ConfirmStart < 0.35
             do
 
-                CoreRunService.Heartbeat:Wait()
+                RunService.Heartbeat:Wait()
 
                 if not Prompt.Parent then
                     Confirmed = true
@@ -972,7 +802,7 @@ local function AutoGrab()
                     Prompt:InputHoldEnd()
                 end)
 
-                CoreRunService.Heartbeat:Wait()
+                RunService.Heartbeat:Wait()
 
                 if not Prompt.Parent
                     or not Prompt.Enabled then
@@ -982,7 +812,7 @@ local function AutoGrab()
             end
         end
 
-        CoreRunService.Heartbeat:Wait()
+        RunService.Heartbeat:Wait()
     end
 
     print("NO SE CONFIRMO EL GRAB")
@@ -1105,7 +935,7 @@ local function StartSequence()
             RespawnPoint
         )
 
-        CoreRunService.Heartbeat:Wait()
+        RunService.Heartbeat:Wait()
 
         if NearestPoint then
 
@@ -1115,7 +945,7 @@ local function StartSequence()
             )
         end
 
-        CoreRunService.Heartbeat:Wait()
+        RunService.Heartbeat:Wait()
 
         print(
             "CICLO "
@@ -1188,7 +1018,7 @@ local function StartSequence()
         Photo1
     )
 
-    CoreRunService.Heartbeat:Wait()
+    RunService.Heartbeat:Wait()
 
     --================================================
     -- AGARRAR OBJETO
@@ -1234,13 +1064,6 @@ local function StartSequence()
     print(
         "FOTO 2 CONFIRMADA"
     )
-
-    --================================================
-    -- FIN REAL DE LA SECUENCIA
-    -- OCULTAR LOADING SOLO AHORA
-    --================================================
-
-    task.spawn(HideLoading)
 
     print(
         "SECUENCIA TERMINADA"
