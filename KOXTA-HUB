@@ -15957,12 +15957,6 @@ do
         v45.Egg = v368
 
         function v368.TryCarry(p67)
-            -- BLOQUEO DEL INSTA TP: nunca permita que el ciclo de farm
-            -- recoja un huevo mientras la funcion Insta TP esta activa.
-            if rawget(_G, 'KOXTA_InstaTPBlockCarry') == true then
-                return false, 'insta tp: carry bloqueado'
-            end
-
             local v369 = v60.Snapshot(true)
 
             if not v369 then
@@ -16027,11 +16021,6 @@ do
 
             for i13 = 1, v51.CarryTries do
                 local v382, v383
-
-                -- Segundo seguro: evita una carrera entre STOP y el carry.
-                if rawget(_G, 'KOXTA_InstaTPBlockCarry') == true then
-                    return false, 'insta tp: carry bloqueado'
-                end
 
                 v382, v383, v381 = f17(6, v54.CarryFieldEgg, v371.Uid, v374)
 
@@ -20194,6 +20183,157 @@ v86.MouseButton1Click:Connect(function()
     v81.RenderFab()
 end)
 
+--==================================================
+-- KOXTA INSTA TP (INDEPENDIENTE DEL FARM)
+-- Detecta el mejor huevo usando la logica interna de v60.Best()
+-- Muestra nombre, dinero por segundo y rareza.
+-- ON = TP al mejor huevo. OFF = desactiva.
+-- NO llama TryCarry ni fireproximityprompt.
+--==================================================
+local koxtaInstaTpEnabled = false
+local koxtaInstaTpLastUid = nil
+local koxtaInstaTpBusy = false
+
+local koxtaInstaTpBox = f9('Frame', {
+    Parent = farm,
+    Size = UDim2.new(1, 0, 0, 104),
+    Position = UDim2.fromOffset(0, 214),
+    BackgroundColor3 = v74.card,
+    BackgroundTransparency = v74.cardTrans,
+    BorderSizePixel = 0,
+})
+f10(8, koxtaInstaTpBox)
+f11(v74.accentDim, 1, koxtaInstaTpBox, 0.25)
+
+local koxtaInstaTpTitle = f9('TextLabel', {
+    Parent = koxtaInstaTpBox,
+    Size = UDim2.new(1, -120, 0, 22),
+    Position = UDim2.fromOffset(8, 5),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBlack,
+    Text = 'INSTA TP',
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextColor3 = v74.text,
+})
+
+local koxtaInstaTpInfo = f9('TextLabel', {
+    Parent = koxtaInstaTpBox,
+    Size = UDim2.new(1, -120, 0, 66),
+    Position = UDim2.fromOffset(8, 28),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.Gotham,
+    Text = 'Mejor huevo: --\nDinero: --/s\nRareza: --',
+    TextSize = 11,
+    TextWrapped = true,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    TextColor3 = v74.textDim,
+})
+
+local koxtaInstaTpButton = f9('TextButton', {
+    Parent = koxtaInstaTpBox,
+    Size = UDim2.fromOffset(102, 38),
+    Position = UDim2.new(1, -110, 0, 33),
+    BackgroundColor3 = v74.accentDim,
+    BackgroundTransparency = 0.05,
+    Font = Enum.Font.GothamBlack,
+    Text = 'INSTA TP: OFF',
+    TextSize = 11,
+    TextColor3 = v74.text,
+    AutoButtonColor = false,
+    BorderSizePixel = 0,
+})
+f10(8, koxtaInstaTpButton)
+f11(v74.accent, 1.5, koxtaInstaTpButton, 0.2)
+
+local function koxtaInstaTpFindBest()
+    local ok, best = pcall(v60.Best)
+    if not ok or type(best) ~= 'table' or type(best.rec) ~= 'table' then
+        return nil
+    end
+    local rec = best.rec
+    if rec.CarrierUserId ~= nil then
+        return nil
+    end
+    if typeof(rec.BottomCFrame) ~= 'CFrame' then
+        return nil
+    end
+    return best
+end
+
+local function koxtaInstaTpRender(best)
+    if not best or type(best.rec) ~= 'table' then
+        v45.SetUiProperty(koxtaInstaTpInfo, 'Text', 'Mejor huevo: --\nDinero: --/s\nRareza: --')
+        return
+    end
+    local rec = best.rec
+    local info = best.info or v58.Info(rec.AssetCategory)
+    local mps = best.mps or v60.MoneyPerSecond(rec)
+    local name = tostring(info and info.name or rec.AssetCategory or 'Desconocido')
+    local rarity = tostring(info and info.rarity or 'Desconocida')
+    v45.SetUiProperty(koxtaInstaTpInfo, 'Text', string.format('Mejor huevo: %s\nDinero: %s/s\nRareza: %s', name, f3(mps), rarity))
+end
+
+local function koxtaInstaTpGo(best)
+    if koxtaInstaTpBusy or not best or type(best.rec) ~= 'table' then
+        return false
+    end
+    local rec = best.rec
+    local character = localPlayer.Character
+    local root = character and character:FindFirstChild('HumanoidRootPart')
+    if not root or typeof(rec.BottomCFrame) ~= 'CFrame' then
+        return false
+    end
+
+    koxtaInstaTpBusy = true
+    -- Si el farm interno estaba activo, se detiene para impedir que su ciclo
+    -- llegue a TryCarry mientras el Insta TP esta funcionando.
+    if v52.Running then
+        pcall(v45.Stop)
+    end
+
+    local target = rec.BottomCFrame.Position + Vector3.new(0, 2.5, 0)
+    pcall(function()
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.CFrame = CFrame.new(target)
+    end)
+    koxtaInstaTpLastUid = rec.Uid
+    task.wait(0.15)
+    koxtaInstaTpBusy = false
+    return true
+end
+
+koxtaInstaTpButton.MouseButton1Click:Connect(function()
+    koxtaInstaTpEnabled = not koxtaInstaTpEnabled
+    v45.SetUiProperty(koxtaInstaTpButton, 'Text', koxtaInstaTpEnabled and 'INSTA TP: ON' or 'INSTA TP: OFF')
+    v45.SetUiProperty(koxtaInstaTpButton, 'BackgroundColor3', koxtaInstaTpEnabled and Color3.fromRGB(30, 120, 65) or v74.accentDim)
+
+    if koxtaInstaTpEnabled then
+        local best = koxtaInstaTpFindBest()
+        koxtaInstaTpRender(best)
+        if best then
+            koxtaInstaTpGo(best)
+        end
+    else
+        koxtaInstaTpLastUid = nil
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if koxtaInstaTpEnabled then
+            local best = koxtaInstaTpFindBest()
+            koxtaInstaTpRender(best)
+            if best and best.rec and best.rec.Uid ~= koxtaInstaTpLastUid then
+                koxtaInstaTpGo(best)
+            end
+        end
+    end
+end)
+
 local pets = f12('PETS')
 local v758 = f9('TextBox', {
     Parent = pets,
@@ -21812,180 +21952,3 @@ end
 
 pcall(print, f4('[hub] build %s carregado \183 %d bichos \183 entrega em (%.1f, %.1f, %.1f)', tostring(v45.Build), #v58.All(), v57.DeliverPos().X, v57.DeliverPos().Y, v57.DeliverPos().Z))
 f8('idle')
-
-
---==================================================
--- KOXTA INSTA TP - SOLO TELEPORT
--- DETECTA EL MEJOR HUEVO -> TP -> NO HACE NADA MAS
--- BLOQUEA EL CARRY PARA EVITAR QUE EL HUEVO SE LO LLEVE
---==================================================
-
-_G.KOXTA_InstaTPBlockCarry = false
-local KOXTA_InstaTPBusy = false
-
-local KOXTA_InstaPanel = f9('Frame', {
-    Parent = farm,
-    Size = UDim2.new(1, -8, 0, 48),
-    Position = UDim2.new(0, 4, 0, 112),
-    BackgroundColor3 = v74.card,
-    BackgroundTransparency = 0.12,
-    BorderSizePixel = 0,
-})
-f10(7, KOXTA_InstaPanel)
-f11(v74.accentDim, 1, KOXTA_InstaPanel, 0.35)
-
-local KOXTA_InstaInfo = f9('TextLabel', {
-    Parent = KOXTA_InstaPanel,
-    Size = UDim2.new(1, -112, 0, 20),
-    Position = UDim2.fromOffset(8, 4),
-    BackgroundTransparency = 1,
-    Font = Enum.Font.GothamBold,
-    Text = 'MEJOR HUEVO: --',
-    TextSize = 10,
-    TextColor3 = v74.text,
-    TextXAlignment = Enum.TextXAlignment.Left,
-    TextTruncate = Enum.TextTruncate.AtEnd,
-})
-
-local KOXTA_InstaMoney = f9('TextLabel', {
-    Parent = KOXTA_InstaPanel,
-    Size = UDim2.new(1, -112, 0, 18),
-    Position = UDim2.fromOffset(8, 25),
-    BackgroundTransparency = 1,
-    Font = Enum.Font.Gotham,
-    Text = '$0/s',
-    TextSize = 9,
-    TextColor3 = v74.accent,
-    TextXAlignment = Enum.TextXAlignment.Left,
-})
-
-local KOXTA_InstaButton = f9('TextButton', {
-    Parent = KOXTA_InstaPanel,
-    Size = UDim2.fromOffset(96, 36),
-    Position = UDim2.new(1, -104, 0, 6),
-    BackgroundColor3 = v74.accentDim,
-    BackgroundTransparency = 0.05,
-    Font = Enum.Font.GothamBold,
-    Text = 'INSTA TP',
-    TextSize = 10,
-    TextColor3 = v74.text,
-    AutoButtonColor = false,
-    BorderSizePixel = 0,
-})
-f10(7, KOXTA_InstaButton)
-
-local function KOXTA_GetBestEggForInstaTP()
-    local target = v60.Best()
-
-    if type(target) ~= 'table' or type(target.rec) ~= 'table' then
-        return nil
-    end
-
-    local rec = target.rec
-
-    if rec.CarrierUserId ~= nil then
-        return nil
-    end
-
-    if rec.State ~= 'Slot' and rec.State ~= 'Dropped' then
-        return nil
-    end
-
-    if typeof(rec.BottomCFrame) ~= 'CFrame' then
-        return nil
-    end
-
-    return target
-end
-
-local function KOXTA_UpdateInstaInfo()
-    local target = KOXTA_GetBestEggForInstaTP()
-
-    if not target then
-        v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'MEJOR HUEVO: --')
-        v45.SetUiProperty(KOXTA_InstaMoney, 'Text', '$0/s')
-        return
-    end
-
-    local rec = target.rec
-    local info = target.info or v58.Info(rec.AssetCategory)
-    local mps = target.mps or v60.MoneyPerSecond(rec)
-
-    v45.SetUiProperty(
-        KOXTA_InstaInfo,
-        'Text',
-        'MEJOR HUEVO: ' .. tostring(info and info.name or rec.AssetCategory or '--')
-    )
-
-    v45.SetUiProperty(
-        KOXTA_InstaMoney,
-        'Text',
-        f3(mps) .. '/s  ·  ' .. tostring(info and info.rarity or 'Unknown')
-    )
-end
-
-KOXTA_InstaButton.MouseButton1Click:Connect(function()
-    if KOXTA_InstaTPBusy then
-        return
-    end
-
-    KOXTA_InstaTPBusy = true
-    _G.KOXTA_InstaTPBlockCarry = true
-
-    local ok, err = pcall(function()
-        local target = KOXTA_GetBestEggForInstaTP()
-
-        if not target then
-            error('no hay huevo valido')
-        end
-
-        local rec = target.rec
-        local position = rec.BottomCFrame.Position
-
-        -- PRIMERO bloqueamos carry; DESPUES paramos el farm.
-        -- Esto evita la carrera donde el ciclo llega al huevo y lo recoge.
-        if v52.Running then
-            v45.Stop()
-        end
-
-        v52.Running = false
-        v51.Enabled = false
-        v257.abort = true
-
-        local character = localPlayer.Character
-        local root = character and character:FindFirstChild('HumanoidRootPart')
-
-        if not root then
-            error('sin HumanoidRootPart')
-        end
-
-        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'TP...')
-        v45.SetUiProperty(
-            KOXTA_InstaInfo,
-            'Text',
-            'TP A: ' .. tostring((target.info and target.info.name) or rec.AssetCategory or '--')
-        )
-
-        -- UNICA accion sobre el personaje: teletransportarlo.
-        root.CFrame = CFrame.new(position + Vector3.new(0, 2, 0))
-
-        -- No CarryByPrompt
-        -- No fireproximityprompt
-        -- No TryCarry
-        -- No CarryFieldEgg
-        -- No segundo TP
-        -- No entrega
-        -- No interaccion con el huevo.
-    end)
-
-    if ok then
-        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'TP ✓')
-    else
-        v45.SetUiProperty(KOXTA_InstaButton, 'Text', 'INSTA TP')
-        v45.SetUiProperty(KOXTA_InstaInfo, 'Text', 'ERROR: ' .. tostring(err))
-    end
-
-    KOXTA_InstaTPBusy = false
-end)
-
-pcall(KOXTA_UpdateInstaInfo)
