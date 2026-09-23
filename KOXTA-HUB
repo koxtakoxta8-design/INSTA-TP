@@ -1346,32 +1346,81 @@ task.spawn(function()
 end)
 
 --==================================================
--- FUNCIONES DE TELEPORT
+-- SISTEMA ORIGINAL FOTO 1 / FOTO 2
 --==================================================
 
-local function GetCharacter()
-
-    return Player.Character
-        or Player.CharacterAdded:Wait()
-
-end
-
-local function GetRoot(Character)
-
-    return Character:FindFirstChild("HumanoidRootPart")
-
-end
-
-local function TP(Position)
-
-    local Character = GetCharacter()
-    local Root = GetRoot(Character)
-
-    if Root then
-        Root.CFrame = CFrame.new(Position)
-        RunService.Heartbeat:Wait()
+local function TP(Character, Position)
+    if not Character or not Character.Parent then
+        return false
     end
 
+    Character:PivotTo(CFrame.new(Position))
+    RunService.Heartbeat:Wait()
+
+    return true
+end
+
+local function WaitForStableRespawn(OldCharacter)
+
+    local Character
+
+    repeat
+        task.wait()
+        Character = Player.Character
+    until Character
+        and Character ~= OldCharacter
+        and Character.Parent
+
+    local Humanoid =
+        Character:WaitForChild("Humanoid")
+
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
+
+    while Humanoid.Health <= 0 do
+        task.wait()
+    end
+
+    local LastPosition = Root.Position
+    local StableTime = 0
+
+    while StableTime < 0.4 do
+
+        task.wait(0.05)
+
+        if not Character.Parent then
+            return WaitForStableRespawn(OldCharacter)
+        end
+
+        if not Root.Parent then
+            Root =
+                Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
+            LastPosition = Root.Position
+            StableTime = 0
+
+            continue
+        end
+
+        local CurrentPosition =
+            Root.Position
+
+        local Movement =
+            (CurrentPosition - LastPosition).Magnitude
+
+        if Movement < 0.05 then
+            StableTime += 0.05
+        else
+            StableTime = 0
+        end
+
+        LastPosition = CurrentPosition
+
+    end
+
+    return Character
 end
 
 --==================================================
@@ -1380,76 +1429,34 @@ end
 
 local function GetNearestTreadmill()
 
-    local Best
+    local BestPoint
     local BestDistance = math.huge
 
     for _, Position in ipairs(Caminadoras) do
 
         local Distance =
-            (Position - RespawnPoint).Magnitude
+            (RespawnPoint - Position).Magnitude
 
         if Distance < BestDistance then
-
             BestDistance = Distance
-            Best = Position
-
+            BestPoint = Position
         end
 
     end
 
-    return Best
-
+    return BestPoint
 end
 
 --==================================================
--- ESPERAR RESPAWN ESTABLE
---==================================================
-
-local function WaitForStableRespawn()
-
-    local Character =
-        Player.CharacterAdded:Wait()
-
-    local Root =
-        Character:WaitForChild(
-            "HumanoidRootPart",
-            10
-        )
-
-    if not Root then
-        return Character
-    end
-
-    local LastPosition = Root.Position
-
-    for i = 1,20 do
-
-        RunService.Heartbeat:Wait()
-
-        if not Root.Parent then
-            break
-        end
-
-        local CurrentPosition = Root.Position
-
-        if (CurrentPosition - LastPosition).Magnitude < 0.5 then
-            break
-        end
-
-        LastPosition = CurrentPosition
-
-    end
-
-    return Character
-
-end
-
---==================================================
--- SLIDE A FOTO 1
--- 65% -> TP DIRECTO
+-- FOTO 1
+-- MISMA LÓGICA: DESLIZAR -> 65% -> TP
 --==================================================
 
 local function MoveToPhoto1(Character)
+
+    if not Character or not Character.Parent then
+        return false
+    end
 
     local Root =
         Character:FindFirstChild(
@@ -1457,73 +1464,105 @@ local function MoveToPhoto1(Character)
         )
 
     if not Root then
-        return
+        return false
     end
-
-    local Start =
-        Root.Position
-
-    local Distance =
-        (Foto1 - Start).Magnitude
-
-    if Distance <= 0 then
-        TP(Foto1)
-        return
-    end
-
-    local Direction =
-        (Foto1 - Start).Unit
 
     local Speed = 1000
+    local ArrivalDistance = 0.5
 
-    local Travelled = 0
+    local StartPosition =
+        Root.Position
 
-    while Root.Parent do
+    local TotalDistance =
+        (Foto1 - StartPosition).Magnitude
+
+    if TotalDistance <= ArrivalDistance then
+
+        Character:PivotTo(
+            CFrame.new(Foto1)
+        )
+
+        return true
+    end
+
+    while Character.Parent
+        and Root.Parent do
+
+        local CurrentPosition =
+            Root.Position
+
+        local Distance =
+            (Foto1 - CurrentPosition).Magnitude
+
+        if Distance <= ArrivalDistance then
+
+            Character:PivotTo(
+                CFrame.new(Foto1)
+            )
+
+            return true
+        end
+
+        local DistanceTravelled =
+            TotalDistance - Distance
+
+        local Progress =
+            DistanceTravelled /
+            TotalDistance
+
+        -- EXACTAMENTE AL 65%
+        if Progress >= 0.65 then
+
+            Character:PivotTo(
+                CFrame.new(Foto1)
+            )
+
+            RunService.Heartbeat:Wait()
+
+            if Root.Parent then
+                Character:PivotTo(
+                    CFrame.new(Foto1)
+                )
+            end
+
+            return true
+        end
+
+        local Direction =
+            (Foto1 - CurrentPosition).Unit
 
         local Delta =
             RunService.Heartbeat:Wait()
 
-        Travelled += Speed * Delta
-
-        local Alpha =
-            math.clamp(
-                Travelled / Distance,
-                0,
-                1
+        local Step =
+            math.min(
+                Speed * Delta,
+                Distance
             )
 
-        -- Al llegar al 65%, TP instantáneo
-        if Alpha >= 0.65 then
-
-            Root.CFrame =
-                CFrame.new(Foto1)
-
-            RunService.Heartbeat:Wait()
-
-            break
-
-        end
-
-        local NewPosition =
-            Start +
-            Direction *
-            (Distance * Alpha)
-
         Root.CFrame =
-            CFrame.new(NewPosition)
+            CFrame.new(
+                CurrentPosition +
+                Direction * Step
+            )
 
     end
 
+    return false
 end
 
 --==================================================
--- BUSCAR PROXIMITYPROMPT MÁS CERCANO
--- SIN FILTRO DE NOMBRE/TEXTO
+-- POSICIÓN DEL PROMPT
 --==================================================
 
 local function GetPromptPosition(Prompt)
 
-    local Parent = Prompt.Parent
+    if not Prompt or not Prompt.Parent then
+        return nil
+    end
+
+    local Parent =
+        Prompt.Parent
 
     if Parent:IsA("BasePart") then
         return Parent.Position
@@ -1533,35 +1572,25 @@ local function GetPromptPosition(Prompt)
         return Parent.WorldPosition
     end
 
-    if Parent:IsA("Model") then
-
-        local Part =
-            Parent.PrimaryPart
-            or Parent:FindFirstChildWhichIsA(
-                "BasePart",
-                true
-            )
-
-        if Part then
-            return Part.Position
-        end
-
-    end
-
-    local Ancestor =
-        Prompt:FindFirstAncestorWhichIsA(
-            "BasePart"
+    local Part =
+        Parent:FindFirstChildWhichIsA(
+            "BasePart",
+            true
         )
 
-    if Ancestor then
-        return Ancestor.Position
+    if Part then
+        return Part.Position
     end
 
     return nil
-
 end
 
-local function FindNearestPrompt(Root)
+--==================================================
+-- PROMPT MÁS CERCANO A FOTO 1
+-- NO FILTRA POR NOMBRE NI TEXTO
+--==================================================
+
+local function FindNearestPromptFromPhoto1()
 
     local BestPrompt
     local BestDistance = math.huge
@@ -1579,7 +1608,7 @@ local function FindNearestPrompt(Root)
             if Position then
 
                 local Distance =
-                    (Position - Root.Position).Magnitude
+                    (Foto1 - Position).Magnitude
 
                 if Distance < BestDistance then
 
@@ -1595,28 +1624,24 @@ local function FindNearestPrompt(Root)
     end
 
     return BestPrompt
-
 end
 
 --==================================================
--- ACTIVAR PROMPT RÁPIDO
+-- ACTIVAR PROMPT
 --==================================================
 
-local function ActivatePrompt(Prompt)
+local function TriggerPrompt(Prompt)
 
-    if not Prompt then
-        return false
-    end
+    if not Prompt
+        or not Prompt.Parent
+        or not Prompt.Enabled then
 
-    if not Prompt.Enabled then
         return false
     end
 
     local Triggered = false
 
-    local Connection
-
-    Connection =
+    local Connection =
         Prompt.Triggered:Connect(function()
             Triggered = true
         end)
@@ -1629,9 +1654,12 @@ local function ActivatePrompt(Prompt)
         Prompt.RequiresLineOfSight = false
     end)
 
-    -- Método rápido
+    -- Usar fireproximityprompt si está disponible.
+    local Fired = false
+
     pcall(function()
         fireproximityprompt(Prompt)
+        Fired = true
     end)
 
     if not Triggered then
@@ -1639,21 +1667,26 @@ local function ActivatePrompt(Prompt)
         pcall(function()
 
             Prompt:InputHoldBegin()
-
-            task.wait()
-
             Prompt:InputHoldEnd()
 
         end)
 
     end
 
-    local Start = os.clock()
+    local StartTime = os.clock()
 
     while not Triggered
-        and os.clock() - Start < 0.35 do
+        and os.clock() - StartTime < 0.5 do
 
         RunService.Heartbeat:Wait()
+
+        -- Si desaparece o se desactiva, el juego procesó el prompt.
+        if not Prompt.Parent
+            or not Prompt.Enabled then
+
+            Triggered = true
+            break
+        end
 
     end
 
@@ -1661,17 +1694,20 @@ local function ActivatePrompt(Prompt)
         Connection:Disconnect()
     end
 
-    return Triggered
-
+    return Triggered or Fired
 end
 
 --==================================================
--- AUTO GRAB
+-- GRAB EN FOTO 1
 --==================================================
 
-local function AutoGrab()
+local function AutoGrabAtPhoto1(Character)
 
-    local Character = GetCharacter()
+    if not Character
+        or not Character.Parent then
+
+        return false
+    end
 
     local Root =
         Character:FindFirstChild(
@@ -1682,33 +1718,49 @@ local function AutoGrab()
         return false
     end
 
-    -- Dar un instante para que el objeto/prompt exista
-    task.wait(0.15)
+    -- Mantener al personaje exactamente en Foto 1.
+    Character:PivotTo(
+        CFrame.new(Foto1)
+    )
+
+    RunService.Heartbeat:Wait()
 
     local StartTime = os.clock()
 
     while os.clock() - StartTime < 1.5 do
 
         local Prompt =
-            FindNearestPrompt(Root)
+            FindNearestPromptFromPhoto1()
 
         if Prompt then
 
-            local Success =
-                ActivatePrompt(Prompt)
+            local PromptPosition =
+                GetPromptPosition(Prompt)
 
-            if Success then
-                return true
+            if PromptPosition then
+
+                -- Solo aceptar el prompt que realmente está
+                -- cerca de Foto 1.
+                local Distance =
+                    (Foto1 - PromptPosition).Magnitude
+
+                if Distance <= 12 then
+
+                    if TriggerPrompt(Prompt) then
+                        return true
+                    end
+
+                end
+
             end
 
         end
 
-        task.wait(0.05)
+        RunService.Heartbeat:Wait()
 
     end
 
     return false
-
 end
 
 --==================================================
@@ -1731,80 +1783,78 @@ local function StartSequence()
         "●  SYSTEM ACTIVE"
 
     local Character =
-        GetCharacter()
+        Player.Character
 
-    local Root =
-        Character:FindFirstChild(
-            "HumanoidRootPart"
-        )
+    if not Character
+        or not Character.Parent then
 
-    if not Root then
         Busy = false
         return
     end
 
-    local NearestTreadmill =
+    local NearestPoint =
         GetNearestTreadmill()
 
     --==================================================
-    -- 20 CICLOS
+    -- 20 CICLOS ORIGINALES
     --==================================================
 
     for Cycle = 1,20 do
 
-        if not Character.Parent then
-            break
+        if not Character
+            or not Character.Parent then
+
+            Busy = false
+            return
         end
 
-        TP(RespawnPoint)
+        TP(
+            Character,
+            RespawnPoint
+        )
 
-        RunService.Heartbeat:Wait()
+        if NearestPoint then
 
-        TP(NearestTreadmill)
-
-        RunService.Heartbeat:Wait()
-
-    end
-
-    --==================================================
-    -- FORZAR RESPAWN
-    --==================================================
-
-    Character =
-        Player.Character
-
-    if Character then
-
-        local Humanoid =
-            Character:FindFirstChildOfClass(
-                "Humanoid"
+            TP(
+                Character,
+                NearestPoint
             )
 
-        if Humanoid then
-            Humanoid.Health = 0
         end
+
+        print(
+            "CICLO " ..
+            Cycle ..
+            "/20"
+        )
 
     end
 
     --==================================================
-    -- NUEVO PERSONAJE
+    -- RESPAWN ORIGINAL
     --==================================================
 
-    Character =
-        WaitForStableRespawn()
+    local OldCharacter =
+        Character
 
-    if not Character then
+    local Humanoid =
+        OldCharacter:FindFirstChildOfClass(
+            "Humanoid"
+        )
+
+    if not Humanoid then
         Busy = false
         return
     end
 
-    Root =
-        Character:WaitForChild(
-            "HumanoidRootPart",
-            10
+    Humanoid.Health = 0
+
+    Character =
+        WaitForStableRespawn(
+            OldCharacter
         )
 
-    if not Root then
+    if not Character then
         Busy = false
         return
     end
@@ -1814,33 +1864,42 @@ local function StartSequence()
     --==================================================
 
     Status.Text =
-        "●  MOVING TO TARGET"
+        "●  MOVING TO PHOTO 1"
 
-    MoveToPhoto1(Character)
+    local Arrived =
+        MoveToPhoto1(Character)
 
-    -- Asegurar posición exacta
-    TP(Foto1)
+    if not Arrived then
+        Busy = false
+        return
+    end
 
     --==================================================
-    -- BUSCAR Y ACTIVAR CUALQUIER PROMPT
+    -- GRAB EN FOTO 1
     --==================================================
 
     Status.Text =
-        "●  SEARCHING TARGET"
+        "●  ACTIVATING TARGET"
 
     local Grabbed =
-        AutoGrab()
+        AutoGrabAtPhoto1(
+            Character
+        )
 
     --==================================================
-    -- FOTO 2 INMEDIATAMENTE
+    -- FOTO 2 INMEDIATA
     --==================================================
 
     if Grabbed then
 
         Status.Text =
-            "●  TARGET ACTIVATED"
+            "●  TARGET GRABBED"
 
-        TP(Foto2)
+        -- SIN ESPERA ARTIFICIAL
+        TP(
+            Character,
+            Foto2
+        )
 
         Status.Text =
             "●  SYSTEM READY"
@@ -1853,7 +1912,6 @@ local function StartSequence()
     end
 
     Busy = false
-
 end
 
 --==================================================
@@ -1891,14 +1949,9 @@ local function ConnectPrompt(Prompt)
         -- PANTALLA NEGRA INSTA STEAL
         --==================================================
 
-        task.spawn(function()
-            ShowLoading()
-        end)
+        ShowLoading()
 
-        -- Esperar a que termine el loading
-        task.wait(2.0)
-
-        -- Iniciar secuencia
+        -- Iniciar la secuencia exactamente después del loading.
         task.spawn(StartSequence)
 
     end)
