@@ -396,18 +396,40 @@ local function ShowLoading()
         task.wait(0.015)
     end
 
+    -- La barra termina, pero la pantalla se mantiene visible.
+    -- Se cerrará únicamente cuando el sistema original llegue a Foto 2.
     task.wait(0.15)
+end
 
-    Tween(LoadingScreen,0.35,{BackgroundTransparency=1},
-        Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+local function HideLoading()
+    if not LoadingScreen.Visible then
+        return
+    end
 
-    Tween(LoadingTitle,0.25,{TextTransparency=1})
-    Tween(LoadingText,0.25,{TextTransparency=1})
+    Tween(
+        LoadingScreen,
+        0.35,
+        {BackgroundTransparency=1},
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.In
+    )
+
+    Tween(
+        LoadingTitle,
+        0.25,
+        {TextTransparency=1}
+    )
+
+    Tween(
+        LoadingText,
+        0.25,
+        {TextTransparency=1}
+    )
 
     task.wait(0.4)
 
-    LoadingScreen.Visible=false
-    LoadingScreen.BackgroundTransparency=0
+    LoadingScreen.Visible = false
+    LoadingScreen.BackgroundTransparency = 0
 end
 
 --==================================================
@@ -518,6 +540,8 @@ local function AttachLoadingToPrompt(Prompt)
     Prompt.Triggered:Connect(function()
         if not Enabled then return end
         if Busy then return end
+
+        -- El loading comienza con el primer ProximityPrompt.
         task.spawn(ShowLoading)
     end)
 end
@@ -1210,6 +1234,13 @@ local function StartSequence()
     print(
         "FOTO 2 CONFIRMADA"
     )
+
+    --================================================
+    -- FIN REAL DE LA SECUENCIA
+    -- OCULTAR LOADING SOLO AHORA
+    --================================================
+
+    task.spawn(HideLoading)
 
     print(
         "SECUENCIA TERMINADA"
