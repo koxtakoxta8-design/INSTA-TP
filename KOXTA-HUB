@@ -633,6 +633,64 @@ task.spawn(function()
     end
 end)
 
+--==================================================
+-- ANIMACIÓN EXTRA DE LA INTERFAZ
+-- Entrada suave + flotación del logo + reflejo del título
+-- Solo visual; no toca el sistema TP.
+--==================================================
+
+local PanelOriginalPosition = Panel.Position
+Panel.Position = UDim2.new(1, 20, 0, 78)
+Panel.BackgroundTransparency = 1
+PanelStroke.Transparency = 1
+Logo.ImageTransparency = 1
+Title.TextTransparency = 1
+Subtitle.TextTransparency = 1
+Status.TextTransparency = 1
+ReadyText.TextTransparency = 1
+InstaButton.BackgroundTransparency = 1
+InstaButton.TextTransparency = 1
+
+UITween(Panel, 0.65, {
+    Position = PanelOriginalPosition,
+    BackgroundTransparency = 0
+}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(PanelStroke, 0.65, {Transparency = 0.25}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(Logo, 0.7, {ImageTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(Title, 0.7, {TextTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(Subtitle, 0.8, {TextTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(Status, 0.9, {TextTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(InstaButton, 0.9, {BackgroundTransparency = 0, TextTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+UITween(ReadyText, 1.0, {TextTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+task.spawn(function()
+    while Logo.Parent do
+        UITween(Logo, 1.2, {Position = UDim2.new(0,15,0,8)}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        task.wait(1.2)
+        UITween(Logo, 1.2, {Position = UDim2.new(0,15,0,16)}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        task.wait(1.2)
+    end
+end)
+
+task.spawn(function()
+    while Title.Parent do
+        UITween(Title, 0.9, {TextColor3 = Color3.fromRGB(255,255,255)}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        task.wait(0.9)
+        UITween(Title, 0.9, {TextColor3 = Color3.fromRGB(180,180,185)}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        task.wait(0.9)
+    end
+end)
+
+InstaButton.MouseEnter:Connect(function()
+    UITween(InstaButton, 0.18, {Size = UDim2.new(1,-20,0,40)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    UITween(InstaStroke, 0.18, {Thickness = 2}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+end)
+
+InstaButton.MouseLeave:Connect(function()
+    UITween(InstaButton, 0.18, {Size = UDim2.new(1,-24,0,38)}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    UITween(InstaStroke, 0.18, {Thickness = 1}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+end)
+
 print("KOXTA INSTA TP - INTERFAZ CARGADA")
 print("SISTEMA TP ORIGINAL SIN MODIFICACIONES")
 
@@ -741,9 +799,16 @@ LS_Percent.ZIndex = 10001
 LS_Percent.Parent = LS_Background
 
 local function LS_Show()
-    if LS_Started or LS_Closed then return end
+    -- Cada nueva activación comienza una nueva carga.
+    -- Nunca toca ni reinicia el sistema de 20 ciclos.
+    if LS_Gui.Enabled then return end
+
     LS_Started = true
+    LS_Closed = false
     LS_Gui.Enabled = true
+    LS_Bar.Size = UDim2.fromScale(0, 1)
+    LS_Percent.Text = "0%"
+    LS_Status.Text = "CARGANDO..."
 
     LS_TweenService:Create(
         LS_Bar,
